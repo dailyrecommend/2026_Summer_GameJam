@@ -4,15 +4,6 @@ using UnityEngine;
 public enum CardCategory { Normal, Special }
 
 /// <summary>
-/// 특수카드 로직이 참조할 컨텍스트. 전투 구현 시 필요한 정보(대상, 플레이어 상태 등)를 여기에 채운다.
-/// 지금은 훅만 잡아둔 빈 껍데기.
-/// </summary>
-public class CardUseContext
-{
-    // TODO(전투 구현 시): caster, target, board 상태 등 추가.
-}
-
-/// <summary>
 /// 모든 카드의 공통 데이터(ScriptableObject). 직접 에셋으로 만들지 않고
 /// NormalCardData / SpecialCardData 를 통해 생성한다.
 /// 카드 겉모습은 3D 오브젝트이며 <see cref="Texture"/> 를 카드 면에 입힌다.

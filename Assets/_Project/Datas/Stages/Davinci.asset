@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c28e3458dcba2442bc3392cd76eedf8, type: 3}
+  m_Name: Davinci
+  m_EditorClassIdentifier: Assembly-CSharp::StageData
+  id: Da
+  displayName: Davinci Code
+  description: Davinci Code
+  boardGamePrefab: {fileID: 6591248832598904911, guid: 152596b97c49e7941b8891814e6f3717, type: 3}
+  enemyDeck:
+  - {fileID: 11400000, guid: 0c3a94abd546fde41acb838970eb211b, type: 2}
+  - {fileID: 11400000, guid: 0778f94f35471e848a36d683be160795, type: 2}
+  - {fileID: 11400000, guid: dbfd46c08d3904743bef108006ed3f17, type: 2}
+  - {fileID: 11400000, guid: 21b1e030c1f059f479fd8cb1a541df5a, type: 2}
+  - {fileID: 11400000, guid: 83f3cec8b5d4f8e4fad06adf7d269561, type: 2}
+  - {fileID: 11400000, guid: df073bef3bf209844b680c90c3ea0dc9, type: 2}
+  - {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}
+  firstClearReward: {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}

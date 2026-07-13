@@ -17,3 +17,4 @@ MonoBehaviour:
   description: It's the Joker, making all results a draw.
   texture: {fileID: 2800000, guid: 1a06e48cebbba324193af2b09516f515, type: 3}
   number: 7
+  effect: 1

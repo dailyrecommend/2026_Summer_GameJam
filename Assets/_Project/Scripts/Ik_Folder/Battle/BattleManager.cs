@@ -15,6 +15,16 @@ public class BattleManager : MonoBehaviour
     [SerializeField] BattleField enemyField;
     [SerializeField] BattleFieldInteractor playerInteractor;
 
+    [Tooltip("전투 중 화면 이동을 잠그기 위한 참조(선택)")]
+    [SerializeField] ScreenFlowController screenFlow;
+
+    [Header("클리어/복귀/보상")]
+    [SerializeField] StageProgress progress;
+    [Tooltip("전투 종료 후 돌아갈 스테이지 화면 인덱스")]
+    [SerializeField] int stageScreenIndex = 1;
+    [Tooltip("결과 표시 후 스테이지로 복귀하기까지 대기(초)")]
+    [SerializeField] float endReturnDelay = 1.5f;
+
     [Header("덱 소스")]
     [Tooltip("플레이어가 모은 덱(뽑을 더미 소스)")]
     [SerializeField] Deck playerDeck;
@@ -24,6 +34,9 @@ public class BattleManager : MonoBehaviour
     [Header("규칙")]
     [SerializeField] int handSize = 4;
     [SerializeField] int winTarget = 3;
+    [Tooltip("특수룰: 이 낮은 숫자가 이 높은 숫자를 이긴다 (예: 1이 6을 이김)")]
+    [SerializeField] int upsetLow = 1;
+    [SerializeField] int upsetHigh = 6;
 
     [Header("타이밍")]
     [Tooltip("선택(커밋) 후 결과 판정까지 대기")]
@@ -47,6 +60,18 @@ public class BattleManager : MonoBehaviour
     bool _waitingPlayer;
     bool _gameOver;
     FieldCard _playerChosen, _enemyChosen;
+    StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
+    int _activeStageIndex = -1;
+
+    /// <summary>스테이지를 지정해 전투 시작. (적 덱/보상을 이 스테이지에서 가져옴)</summary>
+    public void StartBattle(StageData stage) => StartBattle(stage, -1);
+
+    public void StartBattle(StageData stage, int stageIndex)
+    {
+        _activeStage = stage;
+        _activeStageIndex = stageIndex;
+        StartBattle();
+    }
 
     void OnEnable()
     {
@@ -67,13 +92,31 @@ public class BattleManager : MonoBehaviour
         UpdateScoreUI();
         SetMessage("");
 
+        // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
+        if (screenFlow != null) screenFlow.SetNavigationLocked(true);
+
         List<CardData> pCards = new List<CardData>();
         if (playerDeck != null) pCards.AddRange(playerDeck.Cards);
         _playerPile.Init(pCards);
 
-        List<CardData> eCards = (enemyDeck != null && enemyDeck.Count > 0)
-            ? new List<CardData>(enemyDeck)
-            : new List<CardData>(pCards);
+        // 적 덱 우선순위: 스테이지 데이터 > 인스펙터 enemyDeck > 플레이어 덱 복사
+        List<CardData> eCards;
+        if (_activeStage != null && _activeStage.EnemyDeck != null && _activeStage.EnemyDeck.Count > 0)
+        {
+            eCards = new List<CardData>(_activeStage.EnemyDeck);
+            Debug.Log($"[Battle] 적 덱 = 스테이지 '{_activeStage.DisplayName}' ({eCards.Count}장)");
+        }
+        else if (enemyDeck != null && enemyDeck.Count > 0)
+        {
+            eCards = new List<CardData>(enemyDeck);
+            Debug.Log($"[Battle] 적 덱 = 인스펙터 fallback ({eCards.Count}장)");
+        }
+        else
+        {
+            eCards = new List<CardData>(pCards);
+            string why = _activeStage == null ? "스테이지 미지정(_activeStage=null)" : "스테이지 EnemyDeck 비어있음";
+            Debug.Log($"[Battle] 적 덱 = 플레이어 덱 복사 — 이유: {why}");
+        }
         _enemyPile.Init(eCards);
 
         playerField.Clear();
@@ -173,9 +216,15 @@ public class BattleManager : MonoBehaviour
         int p = (_playerChosen != null && _playerChosen.Data != null) ? _playerChosen.Data.Number : -1;
         int e = (_enemyChosen != null && _enemyChosen.Data != null) ? _enemyChosen.Data.Number : -1;
 
+        // 특수 카드 효과 적용(조커 = 무승부 강제 등).
+        ShowdownResult sr = new ShowdownResult { PlayerNumber = p, EnemyNumber = e };
+        if (_playerChosen != null && _playerChosen.Data is SpecialCardData ps) ps.OnShowdown(sr, true);
+        if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData es) es.OnShowdown(sr, false);
+
+        int cmp = sr.ForceDraw ? 0 : CompareCards(sr.PlayerNumber, sr.EnemyNumber);
         string result;
-        if (p > e) { _playerScore++; result = "플레이어 승"; SetMessage("승리!"); }
-        else if (e > p) { _enemyScore++; result = "적 승"; SetMessage("패배..."); }
+        if (cmp > 0) { _playerScore++; result = "플레이어 승"; SetMessage("승리!"); }
+        else if (cmp < 0) { _enemyScore++; result = "적 승"; SetMessage("패배..."); }
         else { result = "무승부"; SetMessage("무승부"); }
 
         Debug.Log($"[Battle] 플레이어 {p} vs 적 {e} → {result} | 점수 {_playerScore} : {_enemyScore}");
@@ -200,6 +249,43 @@ public class BattleManager : MonoBehaviour
         _gameOver = true;
         SetMessage(playerWon ? "게임 승리!" : "게임 패배...");
         if (playerInteractor != null) playerInteractor.SetLocked(true);
+
+        // 승리면 클리어 표시(처음이면 최초 클리어 = 보상 대상).
+        bool firstClear = playerWon && progress != null && _activeStageIndex >= 0
+                          && progress.MarkCleared(_activeStageIndex);
+
+        // 결과를 잠깐 보여준 뒤 스테이지로 복귀 → 이동이 멈추면 보상 지급.
+        Tw.Delay(endReturnDelay, () =>
+        {
+            if (screenFlow != null)
+            {
+                screenFlow.GoTo(stageScreenIndex, () =>
+                {
+                    screenFlow.SetNavigationLocked(false); // 복귀 완료 후 이동 허용
+                    if (firstClear) GrantReward();
+                });
+            }
+            else if (firstClear)
+            {
+                GrantReward();
+            }
+        });
+    }
+
+    // 승부 비교: a가 이기면 +1, b가 이기면 -1, 무승부 0. 특수룰(낮은 수가 특정 높은 수를 이김) 반영.
+    int CompareCards(int a, int b)
+    {
+        if (a == b) return 0;
+        if (a == upsetLow && b == upsetHigh) return 1;
+        if (b == upsetLow && a == upsetHigh) return -1;
+        return a > b ? 1 : -1;
+    }
+
+    void GrantReward()
+    {
+        if (_activeStage == null || _activeStage.FirstClearReward == null || playerDeck == null) return;
+        if (playerDeck.AddCard(_activeStage.FirstClearReward))
+            Debug.Log($"[Battle] 보상 획득: {_activeStage.FirstClearReward.DisplayName}");
     }
 
     void UpdateScoreUI()

@@ -15,6 +15,8 @@ public class BattleFieldInteractor : MonoBehaviour
     [SerializeField] Camera cam;
     [Tooltip("필드 카드가 속한 레이어만 검사(선택). 기본 전체")]
     [SerializeField] LayerMask fieldMask = ~0;
+    [Tooltip("체크하면 호버(툴팁/확대)만 하고 클릭·승부는 하지 않음 (에너미 필드용)")]
+    [SerializeField] bool hoverOnly = false;
 
     /// <summary>카드를 승부에 올렸을 때(같은 카드 재클릭).</summary>
     public event Action<FieldCard> CardCommitted;
@@ -61,8 +63,8 @@ public class BattleFieldInteractor : MonoBehaviour
             else CardUnhovered?.Invoke();
         }
 
-        // 3) 클릭 처리
-        if (_locked) return;
+        // 3) 클릭 처리 (호버 전용이면 생략)
+        if (_locked || hoverOnly) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
         if (hit == null)

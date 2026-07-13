@@ -40,6 +40,9 @@ public class StageCarousel : MonoBehaviour
     [Tooltip("스테이지 시작 시 호출(전투 진입 연결용). 예: BattleEntry.EnterBattle")]
     [SerializeField] UnityEngine.Events.UnityEvent onStageStarted;
 
+    [Tooltip("축(가로/세로)을 정하기 전 무시하는 픽셀 데드존")]
+    [SerializeField] float axisDeadzone = 10f;
+
     int _count;
     int _index;
     bool _dragging;
@@ -51,6 +54,8 @@ public class StageCarousel : MonoBehaviour
 
     Vector2 _downScreenPos;
     float _lastTapTime = -10f;
+    bool _axisDecided;
+    bool _horizontalDrag;
 
     /// <summary>현재 선택된 스테이지 인덱스.</summary>
     public int CurrentIndex => _index;
@@ -123,10 +128,25 @@ public class StageCarousel : MonoBehaviour
         _dragStartWorld = world;
         _contentStartX = content.localPosition.x;
         _downScreenPos = Mouse.current.position.ReadValue();
+        _axisDecided = false;
+        _horizontalDrag = false;
     }
 
     void UpdateDrag()
     {
+        // 축 결정: 가로가 우세할 때만 캐러셀이 반응(세로 드래그는 화면 전환에 양보).
+        if (!_axisDecided)
+        {
+            Vector2 sd = Mouse.current.position.ReadValue() - _downScreenPos;
+            if (sd.magnitude < axisDeadzone) return;
+            _axisDecided = true;
+            _horizontalDrag = Mathf.Abs(sd.x) >= Mathf.Abs(sd.y);
+            // 세로 드래그면 시작점을 지금으로 갱신해 잔여 이동 방지
+            TryGetPlanePoint(out _dragStartWorld);
+            _contentStartX = content.localPosition.x;
+        }
+        if (!_horizontalDrag) return;
+
         if (!TryGetPlanePoint(out Vector3 world)) return;
 
         Vector3 delta = world - _dragStartWorld;

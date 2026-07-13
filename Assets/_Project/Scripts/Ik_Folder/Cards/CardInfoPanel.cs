@@ -10,8 +10,10 @@ public class CardInfoPanel : MonoBehaviour
 {
     [Tooltip("덱 카드 호버 소스(선택)")]
     [SerializeField] CardInteractor interactor;
-    [Tooltip("전투 필드 카드 호버 소스(선택)")]
+    [Tooltip("플레이어 필드 카드 호버 소스(선택)")]
     [SerializeField] BattleFieldInteractor fieldInteractor;
+    [Tooltip("에너미 필드 카드 호버 소스(선택)")]
+    [SerializeField] BattleFieldInteractor enemyFieldInteractor;
 
     [Tooltip("표시/숨김 및 이동할 툴팁 루트 (RectTransform)")]
     [SerializeField] RectTransform tooltipRoot;
@@ -42,6 +44,11 @@ public class CardInfoPanel : MonoBehaviour
             fieldInteractor.CardHovered += Show;
             fieldInteractor.CardUnhovered += Hide;
         }
+        if (enemyFieldInteractor != null)
+        {
+            enemyFieldInteractor.CardHovered += Show;
+            enemyFieldInteractor.CardUnhovered += Hide;
+        }
         Hide();
     }
 
@@ -56,6 +63,11 @@ public class CardInfoPanel : MonoBehaviour
         {
             fieldInteractor.CardHovered -= Show;
             fieldInteractor.CardUnhovered -= Hide;
+        }
+        if (enemyFieldInteractor != null)
+        {
+            enemyFieldInteractor.CardHovered -= Show;
+            enemyFieldInteractor.CardUnhovered -= Hide;
         }
     }
 
