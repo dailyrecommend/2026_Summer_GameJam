@@ -56,6 +56,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Card
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e290635b4f90d2946b0ccc982cfa93bf, type: 3}
+      propertyPath: m_Layer
+      value: 9
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -63,6 +67,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e290635b4f90d2946b0ccc982cfa93bf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5363781451127776760}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: e290635b4f90d2946b0ccc982cfa93bf, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -5565557285253320125}
   m_SourcePrefab: {fileID: 100100000, guid: e290635b4f90d2946b0ccc982cfa93bf, type: 3}
 --- !u!23 &7029534614505536704 stripped
 MeshRenderer:
@@ -87,4 +94,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardView
   targetRenderer: {fileID: 7029534614505536704}
-  textureProperty: _BaseMap
+  textureProperty: _MainTex
+  hoverScale: 1.15
+  hoverOffset: {x: 0, y: 0.1, z: 0}
+  hoverDuration: 0.15
+  hoverEase: 5
+--- !u!65 &-5565557285253320125
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8830732091680726293}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.006076763, y: 0.0084505, z: 0.00005934619}
+  m_Center: {x: 0, y: -2.1582838e-11, z: 0.000090525}

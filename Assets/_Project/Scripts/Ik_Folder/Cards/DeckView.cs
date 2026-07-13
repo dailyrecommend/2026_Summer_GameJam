@@ -110,7 +110,7 @@ public class DeckView : MonoBehaviour
                 startX + i * step,
                 _baseLocalPos.y,
                 _baseLocalPos.z - i * depthStep);
-            v.AnimateTo(target, _baseScale, arrangeDuration, arrangeEase);
+            v.SetHome(target, _baseScale, arrangeDuration, arrangeEase);
         }
     }
 }
