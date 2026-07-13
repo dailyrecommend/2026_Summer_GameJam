@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd2d02a888de0254184c03e42b1b9518, type: 3}
+  m_Name: Davinci_DavinciJoker
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialCardData
+  id: DDJ
+  displayName: Davinci Joker
+  description: It's the Davinci Joker, randomly changing into a number from 0 to
+    13.
+  texture: {fileID: 2800000, guid: 612fca038d7863645967db6cc21798a3, type: 3}
+  number: 7

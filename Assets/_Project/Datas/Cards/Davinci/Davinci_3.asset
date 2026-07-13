@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: Davinci_3
   m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
   id: D3
-  displayName: Davinci 3
-  description: Davinci 3
+  displayName: 3
+  description: It's Three.
   texture: {fileID: 2800000, guid: 4c2f1bb51cc69ea438f3724521d08258, type: 3}
-  cost: 0
-  power: 3
+  number: 3

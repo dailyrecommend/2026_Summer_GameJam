@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: Davinci_2
   m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
   id: D2
-  displayName: Davinci 2
-  description: Davinci 2
+  displayName: 2
+  description: It's Two.
   texture: {fileID: 2800000, guid: 4b2be9f66f8bcaf4dbe97f83a58f689b, type: 3}
-  cost: 0
-  power: 2
+  number: 2

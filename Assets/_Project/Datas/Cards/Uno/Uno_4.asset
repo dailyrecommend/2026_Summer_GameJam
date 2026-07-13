@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e422e8600873b94d9592d60a3368f22, type: 3}
-  m_Name: Playing_4
+  m_Name: Uno_4
   m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
-  id: P4
+  id: U4
   displayName: 4
   description: It's Four.
-  texture: {fileID: 2800000, guid: ececb15fa69a7914c8514fd9a1ad53b2, type: 3}
+  texture: {fileID: 2800000, guid: f46c941cb72ed464d855cd00650fcfaf, type: 3}
   number: 4
