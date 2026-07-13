@@ -36,6 +36,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] TMP_Text enemyScoreText;
     [SerializeField] TMP_Text messageText;
 
+    [Header("점수판 (선택)")]
+    [SerializeField] ScoreBoard playerScoreBoard;
+    [SerializeField] ScoreBoard enemyScoreBoard;
+
     readonly CardPile _playerPile = new CardPile();
     readonly CardPile _enemyPile = new CardPile();
 
@@ -169,9 +173,12 @@ public class BattleManager : MonoBehaviour
         int p = (_playerChosen != null && _playerChosen.Data != null) ? _playerChosen.Data.Number : -1;
         int e = (_enemyChosen != null && _enemyChosen.Data != null) ? _enemyChosen.Data.Number : -1;
 
-        if (p > e) { _playerScore++; SetMessage("승리!"); }
-        else if (e > p) { _enemyScore++; SetMessage("패배..."); }
-        else SetMessage("무승부");
+        string result;
+        if (p > e) { _playerScore++; result = "플레이어 승"; SetMessage("승리!"); }
+        else if (e > p) { _enemyScore++; result = "적 승"; SetMessage("패배..."); }
+        else { result = "무승부"; SetMessage("무승부"); }
+
+        Debug.Log($"[Battle] 플레이어 {p} vs 적 {e} → {result} | 점수 {_playerScore} : {_enemyScore}");
         UpdateScoreUI();
 
         // 승부에 올린 카드 + 필드에 남은 모든 카드를 각자 버린 더미로.
@@ -199,6 +206,8 @@ public class BattleManager : MonoBehaviour
     {
         if (playerScoreText != null) playerScoreText.text = _playerScore.ToString();
         if (enemyScoreText != null) enemyScoreText.text = _enemyScore.ToString();
+        if (playerScoreBoard != null) playerScoreBoard.SetScore(_playerScore);
+        if (enemyScoreBoard != null) enemyScoreBoard.SetScore(_enemyScore);
     }
 
     void SetMessage(string msg)
