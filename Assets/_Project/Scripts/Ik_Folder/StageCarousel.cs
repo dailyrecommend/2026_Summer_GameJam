@@ -32,6 +32,14 @@ public class StageCarousel : MonoBehaviour
     [SerializeField] float centerScale = 1f;
     [SerializeField] float sideScale = 0.7f;
 
+    [Header("스테이지 시작 (더블클릭)")]
+    [Tooltip("더블클릭으로 인정할 두 클릭 사이 최대 시간(초)")]
+    [SerializeField] float doubleClickTime = 0.3f;
+    [Tooltip("이 픽셀 이하로 움직인 클릭만 '탭'으로 간주(드래그와 구분)")]
+    [SerializeField] float tapMaxPixels = 12f;
+    [Tooltip("스테이지 시작 시 호출(전투 진입 연결용). 예: BattleEntry.EnterBattle")]
+    [SerializeField] UnityEngine.Events.UnityEvent onStageStarted;
+
     int _count;
     int _index;
     bool _dragging;
@@ -41,12 +49,17 @@ public class StageCarousel : MonoBehaviour
     Tween _snapTween;
     Vector3[] _baseScales;
 
+    Vector2 _downScreenPos;
+    float _lastTapTime = -10f;
+
     /// <summary>현재 선택된 스테이지 인덱스.</summary>
     public int CurrentIndex => _index;
     /// <summary>현재 선택된 스테이지 Transform (없으면 null).</summary>
     public Transform CurrentStage => (_count > 0) ? content.GetChild(_index) : null;
     /// <summary>선택 스테이지가 바뀔 때 호출 (인자 = 새 인덱스).</summary>
     public System.Action<int> OnStageChanged;
+    /// <summary>스테이지를 시작(더블클릭)했을 때 호출 (인자 = 시작한 인덱스).</summary>
+    public System.Action<int> OnStageStarted;
 
     void Awake()
     {
@@ -109,6 +122,7 @@ public class StageCarousel : MonoBehaviour
         _snapTween = null;
         _dragStartWorld = world;
         _contentStartX = content.localPosition.x;
+        _downScreenPos = Mouse.current.position.ReadValue();
     }
 
     void UpdateDrag()
@@ -143,6 +157,27 @@ public class StageCarousel : MonoBehaviour
         else if (diff < 0f) target = _index + Mathf.CeilToInt(diff - bias);
 
         SnapTo(target);
+
+        // 거의 안 움직인 클릭('탭')이면 더블클릭 판정.
+        float moved = Vector2.Distance(Mouse.current.position.ReadValue(), _downScreenPos);
+        if (moved <= tapMaxPixels)
+        {
+            if (Time.unscaledTime - _lastTapTime <= doubleClickTime)
+            {
+                _lastTapTime = -10f;     // 소비
+                StartCurrentStage();
+            }
+            else _lastTapTime = Time.unscaledTime;
+        }
+        else _lastTapTime = -10f;         // 드래그였으면 탭 기록 무효화
+    }
+
+    /// <summary>현재 선택(중앙) 스테이지를 시작한다. (더블클릭 시 호출)</summary>
+    public void StartCurrentStage()
+    {
+        Debug.Log($"[StageCarousel] 더블클릭 감지 → 스테이지 {_index} 시작");
+        OnStageStarted?.Invoke(_index);
+        onStageStarted?.Invoke();
     }
 
     // ── 이동 API ──────────────────────────────────────────────

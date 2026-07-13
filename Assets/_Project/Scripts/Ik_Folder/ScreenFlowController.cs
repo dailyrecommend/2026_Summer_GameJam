@@ -58,13 +58,25 @@ public class ScreenFlowController : MonoBehaviour
         if (index == _current && _active == null) { onArrived?.Invoke(); return; }
 
         _active?.Kill();
+        int prev = _current;
         _current = index;
         UpdateParallax(index);
+
+        // 전환 중에는 지나가는 패널이 보여야 하므로 출발~도착 구간을 모두 켠다.
+        int lo = Mathf.Min(prev, index);
+        int hi = Mathf.Max(prev, index);
+        for (int i = 0; i < screens.Length; i++)
+            SetPanelActive(i, i >= lo && i <= hi);
 
         Tween tw = screensRoot.DOLocalMove(TargetRootPosFor(index), duration);
         if (useCustomCurve) tw.SetEase(customCurve);
         else tw.SetEase(ease);
-        tw.OnComplete(() => { _active = null; onArrived?.Invoke(); });
+        tw.OnComplete(() =>
+        {
+            _active = null;
+            ActivateOnly(index); // 전환 끝나면 현재 패널만 남김
+            onArrived?.Invoke();
+        });
         _active = tw;
     }
 
@@ -74,7 +86,21 @@ public class ScreenFlowController : MonoBehaviour
         if (screens == null || index < 0 || index >= screens.Length) return;
         _current = index;
         screensRoot.localPosition = TargetRootPosFor(index);
+        ActivateOnly(index);
         UpdateParallax(index);
+    }
+
+    /// <summary>현재 인덱스 패널만 활성화하고 나머지는 비활성화.</summary>
+    void ActivateOnly(int index)
+    {
+        for (int i = 0; i < screens.Length; i++)
+            SetPanelActive(i, i == index);
+    }
+
+    void SetPanelActive(int index, bool active)
+    {
+        if (screens[index] != null && screens[index].gameObject.activeSelf != active)
+            screens[index].gameObject.SetActive(active);
     }
 
     void UpdateParallax(int index)

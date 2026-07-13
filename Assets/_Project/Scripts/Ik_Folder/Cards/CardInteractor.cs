@@ -59,6 +59,10 @@ public class CardInteractor : MonoBehaviour
             if (_hovered != null) CardClicked?.Invoke(_hovered.Data);
             else BackgroundClicked?.Invoke();
         }
+
+        // 4) 우클릭 → 카드 뒤집기
+        if (Mouse.current.rightButton.wasPressedThisFrame && _hovered != null)
+            _hovered.Flip();
     }
 
     void OnDisable()

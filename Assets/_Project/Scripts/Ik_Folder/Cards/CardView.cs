@@ -24,14 +24,29 @@ public class CardView : MonoBehaviour
     [SerializeField] float hoverDuration = 0.15f;
     [SerializeField] Ease hoverEase = Ease.OutQuad;
 
+    [Header("플립 (우클릭 뒤집기)")]
+    [Tooltip("뒤집을 회전 축(로컬). 카드를 좌우로 넘기면 Y, 위아래로 넘기면 X")]
+    [SerializeField] Vector3 flipAxis = Vector3.up;
+    [SerializeField] float flipDuration = 0.3f;
+    [SerializeField] Ease flipEase = Ease.OutQuad;
+
     CardData _data;
     MaterialPropertyBlock _mpb;
     Tween _moveTween;
     Tween _scaleTween;
+    Tween _flipTween;
 
     Vector3 _homePos;
     Vector3 _homeScale = Vector3.one;
+    Quaternion _baseRot;
     bool _hovered;
+    bool _flipped;
+    float _flipAngle;
+
+    void Awake()
+    {
+        _baseRot = transform.localRotation;
+    }
 
     public CardData Data => _data;
     public bool IsHovered => _hovered;
@@ -80,4 +95,20 @@ public class CardView : MonoBehaviour
         _scaleTween?.Kill();
         _scaleTween = transform.DOScale(target, duration).SetEase(ease);
     }
+
+    /// <summary>카드를 180도 뒤집기(토글). 다시 호출하면 원래대로 돌아온다.</summary>
+    public void Flip()
+    {
+        _flipped = !_flipped;
+        float to = _flipped ? 180f : 0f;
+
+        _flipTween?.Kill();
+        _flipTween = Tw.To(() => _flipAngle, v =>
+        {
+            _flipAngle = v;
+            transform.localRotation = _baseRot * Quaternion.AngleAxis(v, flipAxis);
+        }, to, flipDuration).SetEase(flipEase);
+    }
+
+    public bool IsFlipped => _flipped;
 }

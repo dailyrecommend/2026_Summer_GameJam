@@ -8,7 +8,10 @@ using TMPro;
 /// </summary>
 public class CardInfoPanel : MonoBehaviour
 {
+    [Tooltip("덱 카드 호버 소스(선택)")]
     [SerializeField] CardInteractor interactor;
+    [Tooltip("전투 필드 카드 호버 소스(선택)")]
+    [SerializeField] BattleFieldInteractor fieldInteractor;
 
     [Tooltip("표시/숨김 및 이동할 툴팁 루트 (RectTransform)")]
     [SerializeField] RectTransform tooltipRoot;
@@ -34,6 +37,11 @@ public class CardInfoPanel : MonoBehaviour
             interactor.CardHovered += Show;
             interactor.CardUnhovered += Hide;
         }
+        if (fieldInteractor != null)
+        {
+            fieldInteractor.CardHovered += Show;
+            fieldInteractor.CardUnhovered += Hide;
+        }
         Hide();
     }
 
@@ -43,6 +51,11 @@ public class CardInfoPanel : MonoBehaviour
         {
             interactor.CardHovered -= Show;
             interactor.CardUnhovered -= Hide;
+        }
+        if (fieldInteractor != null)
+        {
+            fieldInteractor.CardHovered -= Show;
+            fieldInteractor.CardUnhovered -= Hide;
         }
     }
 
@@ -57,7 +70,7 @@ public class CardInfoPanel : MonoBehaviour
 
         if (nameText != null) nameText.text = card.DisplayName;
         if (categoryText != null) categoryText.text = card.IsSpecial ? "특수" : "일반";
-        if (statsText != null) statsText.text = $"코스트 {card.Cost}   파워 {card.Power}";
+        if (statsText != null) statsText.text = $"숫자 {card.Number}";
         if (descriptionText != null) descriptionText.text = card.Description;
 
         _visible = true;

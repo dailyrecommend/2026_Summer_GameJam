@@ -28,16 +28,15 @@ public abstract class CardData : ScriptableObject
     [Header("표시 (3D 카드 면에 입힐 텍스쳐)")]
     [SerializeField] Texture texture;
 
-    [Header("수치 (게임에 맞게 이름/개수 조정)")]
-    [SerializeField] int cost;
-    [SerializeField] int power;
+    [Header("수치")]
+    [Tooltip("승부에서 비교하는 카드 숫자")]
+    [SerializeField] int number;
 
     public string Id => id;
     public string DisplayName => displayName;
     public string Description => description;
     public Texture Texture => texture;
-    public int Cost => cost;
-    public int Power => power;
+    public int Number => number;
 
     /// <summary>일반/특수 분류. 파생 클래스가 결정.</summary>
     public abstract CardCategory Category { get; }
