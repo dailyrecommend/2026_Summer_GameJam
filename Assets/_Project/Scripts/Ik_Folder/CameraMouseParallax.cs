@@ -30,6 +30,10 @@ public class CameraMouseParallax : MonoBehaviour
 
     Vector3 _startLocalPos;
     Quaternion _startLocalRot;
+    bool _active = true;
+
+    /// <summary>패럴랙스 추종 on/off. 끄면 부드럽게 원위치로 복귀한다.</summary>
+    public void SetActive(bool value) => _active = value;
 
     void Awake()
     {
@@ -39,20 +43,23 @@ public class CameraMouseParallax : MonoBehaviour
 
     void LateUpdate()
     {
-        // 마우스가 없으면(예: 터치 전용) 아무것도 하지 않음.
-        if (Mouse.current == null) return;
-        Vector2 mousePos = Mouse.current.position.ReadValue();
+        // 비활성이거나 마우스가 없으면 중립(원위치)을 목표로 삼아 부드럽게 복귀.
+        Vector2 m = Vector2.zero;
+        if (_active && Mouse.current != null)
+        {
+            Vector2 mousePos = Mouse.current.position.ReadValue();
 
-        // 화면 중심 기준 마우스 위치를 -1~1로 정규화.
-        Vector2 m = new Vector2(
-            (mousePos.x / Screen.width) * 2f - 1f,
-            (mousePos.y / Screen.height) * 2f - 1f);
+            // 화면 중심 기준 마우스 위치를 -1~1로 정규화.
+            m = new Vector2(
+                (mousePos.x / Screen.width) * 2f - 1f,
+                (mousePos.y / Screen.height) * 2f - 1f);
 
-        // 화면 밖으로 커서가 나가도 과하게 움직이지 않도록 제한.
-        m.x = Mathf.Clamp(m.x, -1f, 1f);
-        m.y = Mathf.Clamp(m.y, -1f, 1f);
+            // 화면 밖으로 커서가 나가도 과하게 움직이지 않도록 제한.
+            m.x = Mathf.Clamp(m.x, -1f, 1f);
+            m.y = Mathf.Clamp(m.y, -1f, 1f);
 
-        if (invert) m = -m;
+            if (invert) m = -m;
+        }
 
         float dt = ignoreTimeScale ? Time.unscaledDeltaTime : Time.deltaTime;
         float t = 1f - Mathf.Exp(-smooth * dt); // 프레임레이트 독립적인 감쇠 보간
