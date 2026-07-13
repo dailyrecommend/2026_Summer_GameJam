@@ -91,10 +91,11 @@ public class CardInfoPanel : MonoBehaviour
         Vector2 mouse = Mouse.current.position.ReadValue();
         Vector2 pos = mouse + offset;
 
-        // 툴팁이 화면 밖으로 나가지 않도록 클램프.
-        Vector2 size = tooltipRoot.rect.size * tooltipRoot.lossyScale;
-        float halfW = size.x * 0.5f;
-        float halfH = size.y * 0.5f;
+        // 툴팁이 화면 밖으로 나가지 않도록 클램프. (rect.size는 Vector2, lossyScale은 Vector3 → 성분별 곱)
+        Vector3 scale = tooltipRoot.lossyScale;
+        Vector2 size = tooltipRoot.rect.size;
+        float halfW = size.x * scale.x * 0.5f;
+        float halfH = size.y * scale.y * 0.5f;
         // 피벗을 고려하지 않고 대략 중심 기준으로 클램프(피벗 0.5 가정, 아니어도 큰 문제 없음).
         pos.x = Mathf.Clamp(pos.x, halfW + screenPadding, Screen.width - halfW - screenPadding);
         pos.y = Mathf.Clamp(pos.y, halfH + screenPadding, Screen.height - halfH - screenPadding);

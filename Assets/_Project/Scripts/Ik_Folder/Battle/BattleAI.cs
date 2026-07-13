@@ -18,4 +18,17 @@ public static class BattleAI
         }
         return best;
     }
+
+    /// <summary>필드 카드 중 숫자가 가장 높은 것을 선택. 비었으면 null.</summary>
+    public static FieldCard PickHighestCard(IReadOnlyList<FieldCard> cards)
+    {
+        FieldCard best = null;
+        for (int i = 0; i < cards.Count; i++)
+        {
+            FieldCard c = cards[i];
+            if (c == null || c.Data == null) continue;
+            if (best == null || c.Data.Number > best.Data.Number) best = c;
+        }
+        return best;
+    }
 }
