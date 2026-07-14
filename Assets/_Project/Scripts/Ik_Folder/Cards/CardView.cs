@@ -30,6 +30,12 @@ public class CardView : MonoBehaviour
     [SerializeField] float flipDuration = 0.3f;
     [SerializeField] Ease flipEase = Ease.OutQuad;
 
+    [Header("호버 기울기 (커서 쪽으로 기움)")]
+    [Tooltip("최대 기울기 각도(도)")]
+    [SerializeField] float tiltMaxAngle = 12f;
+    [Tooltip("기울기 따라오는 부드러움")]
+    [SerializeField] float tiltSmooth = 14f;
+
     CardData _data;
     MaterialPropertyBlock _mpb;
     Tween _moveTween;

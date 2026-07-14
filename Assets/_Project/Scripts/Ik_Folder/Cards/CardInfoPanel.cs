@@ -14,6 +14,8 @@ public class CardInfoPanel : MonoBehaviour
     [SerializeField] BattleFieldInteractor fieldInteractor;
     [Tooltip("에너미 필드 카드 호버 소스(선택)")]
     [SerializeField] BattleFieldInteractor enemyFieldInteractor;
+    [Tooltip("스테이지 호버 소스(선택)")]
+    [SerializeField] StageHoverInteractor stageHover;
 
     [Tooltip("표시/숨김 및 이동할 툴팁 루트 (RectTransform)")]
     [SerializeField] RectTransform tooltipRoot;
@@ -49,6 +51,11 @@ public class CardInfoPanel : MonoBehaviour
             enemyFieldInteractor.CardHovered += Show;
             enemyFieldInteractor.CardUnhovered += Hide;
         }
+        if (stageHover != null)
+        {
+            stageHover.StageHovered += ShowStage;
+            stageHover.StageUnhovered += Hide;
+        }
         Hide();
     }
 
@@ -69,6 +76,11 @@ public class CardInfoPanel : MonoBehaviour
             enemyFieldInteractor.CardHovered -= Show;
             enemyFieldInteractor.CardUnhovered -= Hide;
         }
+        if (stageHover != null)
+        {
+            stageHover.StageHovered -= ShowStage;
+            stageHover.StageUnhovered -= Hide;
+        }
     }
 
     void LateUpdate()
@@ -79,11 +91,21 @@ public class CardInfoPanel : MonoBehaviour
     public void Show(CardData card)
     {
         if (card == null) { Hide(); return; }
+        ShowContent(card.DisplayName, card.IsSpecial ? "특수" : "일반", $"숫자 {card.Number}", card.Description);
+    }
 
-        if (nameText != null) nameText.text = card.DisplayName;
-        if (categoryText != null) categoryText.text = card.IsSpecial ? "특수" : "일반";
-        if (statsText != null) statsText.text = $"숫자 {card.Number}";
-        if (descriptionText != null) descriptionText.text = card.Description;
+    public void ShowStage(StageData stage)
+    {
+        if (stage == null) { Hide(); return; }
+        ShowContent(stage.DisplayName, "스테이지", "", stage.Description);
+    }
+
+    void ShowContent(string name, string category, string stats, string desc)
+    {
+        if (nameText != null) nameText.text = name;
+        if (categoryText != null) categoryText.text = category;
+        if (statsText != null) statsText.text = stats;
+        if (descriptionText != null) descriptionText.text = desc;
 
         _visible = true;
         if (tooltipRoot != null) tooltipRoot.gameObject.SetActive(true);

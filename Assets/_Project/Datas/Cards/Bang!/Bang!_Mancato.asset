@@ -18,5 +18,5 @@ MonoBehaviour:
     \uB2E4\uC74C \uD134\uC5D0\uB294 \uD328\uBC30\uD574\uB3C4 \uC0C1\uB300\uAC00 \uC2B9\uC810\uC744
     \uC5BB\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
   texture: {fileID: 2800000, guid: e758bbfe47d3f8b408d32de59f149634, type: 3}
-  number: 0
+  number: 9
   effect: 0

@@ -119,6 +119,54 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &16035233
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 16035235}
+  - component: {fileID: 16035234}
+  m_Layer: 0
+  m_Name: StageHoverInteractor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &16035234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 16035233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6168ae574d82e1a49950c216ad74c46c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StageHoverInteractor
+  cam: {fileID: 330585545}
+  stageMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+--- !u!4 &16035235
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 16035233}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &86024508
 GameObject:
   m_ObjectHideFlags: 0
@@ -1056,6 +1104,7 @@ MonoBehaviour:
   interactor: {fileID: 130713378}
   fieldInteractor: {fileID: 733531148}
   enemyFieldInteractor: {fileID: 1679043350}
+  stageHover: {fileID: 16035234}
   tooltipRoot: {fileID: 1245755595}
   offset: {x: 0, y: 80}
   screenPadding: 8
@@ -2432,6 +2481,7 @@ MonoBehaviour:
   stages:
   - {fileID: 11400000, guid: 27dd4b50d30ae814db2ca0a7c2208ecd, type: 2}
   - {fileID: 11400000, guid: e404bbebc2ec5d24a9380ccdc5e7357e, type: 2}
+  - {fileID: 11400000, guid: 055914111cefece42b8b8a362d699dc4, type: 2}
 --- !u!1 &1102121723
 GameObject:
   m_ObjectHideFlags: 0
@@ -4314,18 +4364,6 @@ PrefabInstance:
       value: DavinciBox
       objectReference: {fileID: 0}
     - target: {fileID: 3326152391600013929, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3326152391600013929, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3326152391600013929, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3326152391600013929, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -4365,14 +4403,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3326152391600013929, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4495702001077549318, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: c49e0e18ca9acf64682c69560aa2ee8b, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4454,3 +4484,4 @@ SceneRoots:
   - {fileID: 1084214455}
   - {fileID: 1959706088}
   - {fileID: 1397804015}
+  - {fileID: 16035235}

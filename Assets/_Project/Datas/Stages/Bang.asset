@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c28e3458dcba2442bc3392cd76eedf8, type: 3}
+  m_Name: Bang
+  m_EditorClassIdentifier: Assembly-CSharp::StageData
+  id: Ba
+  displayName: Bang
+  description: Bang
+  boardGamePrefab: {fileID: 8163554083102890994, guid: 475e3e0ee887fc34ab2d8a7b2e25b6ab, type: 3}
+  enemyDeck:
+  - {fileID: 11400000, guid: e8dba35abe48ec8429c5d97c77a4ac33, type: 2}
+  - {fileID: 11400000, guid: 2f824ce4cb77e224cb6404f5d2b6a51e, type: 2}
+  - {fileID: 11400000, guid: 76948e14f4cf37a4eb9e1dc678c656aa, type: 2}
+  - {fileID: 11400000, guid: d2063006f39a89d4ca1ab7d5ac149cb7, type: 2}
+  - {fileID: 11400000, guid: 0b4376ff12c039f4f8315dedef30ba38, type: 2}
+  - {fileID: 11400000, guid: dbe3fddc4ae4d28449cd96e168efd61a, type: 2}
+  - {fileID: 11400000, guid: 16095924ed1b2b440b07be76233511b8, type: 2}
+  - {fileID: 11400000, guid: 5ce9ced32f17d714f9f39e4e0f0243a4, type: 2}
+  - {fileID: 11400000, guid: b39193b8f5b1f0b4f9ce5c30cefcc9a0, type: 2}
+  firstClearReward: {fileID: 11400000, guid: 16095924ed1b2b440b07be76233511b8, type: 2}
