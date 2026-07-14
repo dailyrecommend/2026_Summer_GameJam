@@ -117,6 +117,8 @@ public class BattleManager : MonoBehaviour
         UpdateScoreUI();
         SetMessage("");
 
+        EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnGameStart);
+
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
 
@@ -161,6 +163,8 @@ public class BattleManager : MonoBehaviour
     void StartRound()
     {
         if (_gameOver) return;
+
+        EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnRoundStart);
 
         // 뽑을 더미 부족 → 버린 더미에서 넘어오는 리셔플 연출 먼저.
         float wait = 0f;
@@ -240,6 +244,11 @@ public class BattleManager : MonoBehaviour
         _enemyChosen = EnemyAI.ChooseCard(style, enemyField.Cards, playerField.Cards, _playerSpecialLast);
         if (_enemyChosen != null) enemyField.CommitCard(_enemyChosen);
 
+        if (_playerChosen != null && _playerChosen.Data is SpecialCardData)
+            EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnSpecialOfPlayer);
+        if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData)
+            EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnSpecialOfEnemy);
+
         SetMessage("승부!");
         Tw.Delay(revealDelay, Resolve);
     }
@@ -318,8 +327,16 @@ public class BattleManager : MonoBehaviour
         else if (sr.ForceOutcome) cmp = sr.ForcedCmp;
         else cmp = CompareCards(sr.PlayerNumber, sr.EnemyNumber);
         string result;
-        if (cmp > 0) { _playerScore += sr.PlayerWinPoints; result = $"플레이어 승(+{sr.PlayerWinPoints})"; SetMessage("승리!"); }
-        else if (cmp < 0) { _enemyScore += sr.EnemyWinPoints; result = $"적 승(+{sr.EnemyWinPoints})"; SetMessage("패배..."); }
+        if (cmp > 0)
+        {
+            _playerScore += sr.PlayerWinPoints; result = $"플레이어 승(+{sr.PlayerWinPoints})"; SetMessage("승리!");
+            EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnPlauyerWininRound);
+        }
+        else if (cmp < 0)
+        {
+            _enemyScore += sr.EnemyWinPoints; result = $"적 승(+{sr.EnemyWinPoints})"; SetMessage("패배...");
+            EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnPlayerFailinRound);
+        }
         else { result = "무승부"; SetMessage("무승부"); }
 
         // 맥주: 상대 점수를 1점 회수(0점이면 그대로).
@@ -362,6 +379,9 @@ public class BattleManager : MonoBehaviour
         _gameOver = true;
         SetMessage(playerWon ? "게임 승리!" : "게임 패배...");
         if (playerInteractor != null) playerInteractor.SetLocked(true);
+
+        EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(
+            playerWon ? EnemyDialogueTrigger.OnPlayerWininGame : EnemyDialogueTrigger.OnPlayerFailinGame);
 
         // 승리면 클리어 표시(처음이면 최초 클리어 = 보상 대상).
         bool firstClear = playerWon && progress != null && _activeStageIndex >= 0
