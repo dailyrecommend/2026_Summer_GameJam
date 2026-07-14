@@ -1744,7 +1744,7 @@ MonoBehaviour:
   cam: {fileID: 330585545}
   dragMinIndex: 0
   dragMaxIndex: 2
-  swipeThreshold: 0.34
+  swipeThreshold: 0.15
   axisDeadzone: 10
   dragScreenFraction: 1
   invertDrag: 0

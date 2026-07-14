@@ -55,6 +55,7 @@ public class BattleField : MonoBehaviour
     Vector3 _baseLocalPos;
 
     public IReadOnlyList<FieldCard> Cards => _cards;
+    public Transform ShowdownSlot => showdownSlot;
 
     void Awake()
     {

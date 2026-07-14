@@ -43,6 +43,9 @@ public class BattleManager : MonoBehaviour
     [SerializeField] float revealDelay = 0.6f;
     [Tooltip("결과 후 다음 라운드까지 대기")]
     [SerializeField] float nextRoundDelay = 1.2f;
+    [Tooltip("리버스 교환 시 카드가 상대 자리로 이동하는 시간")]
+    [SerializeField] float swapMoveDuration = 0.4f;
+    [SerializeField] TweenKit.Ease swapMoveEase = TweenKit.Ease.OutCubic;
 
     [Header("UI (선택)")]
     [SerializeField] TMP_Text playerScoreText;
@@ -60,6 +63,8 @@ public class BattleManager : MonoBehaviour
     bool _waitingPlayer;
     bool _gameOver;
     FieldCard _playerChosen, _enemyChosen;
+    bool _playerSpecialLast, _enemySpecialLast; // 전 라운드에 특수카드를 냈는지
+    bool _playerDoubleNext, _enemyDoubleNext;   // 다음 라운드 승점 2배 예약(드로우 2)
     StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
     int _activeStageIndex = -1;
 
@@ -89,6 +94,10 @@ public class BattleManager : MonoBehaviour
         _gameOver = false;
         _playerScore = 0;
         _enemyScore = 0;
+        _playerSpecialLast = false;
+        _enemySpecialLast = false;
+        _playerDoubleNext = false;
+        _enemyDoubleNext = false;
         UpdateScoreUI();
         SetMessage("");
 
@@ -216,25 +225,91 @@ public class BattleManager : MonoBehaviour
         int p = (_playerChosen != null && _playerChosen.Data != null) ? _playerChosen.Data.Number : -1;
         int e = (_enemyChosen != null && _enemyChosen.Data != null) ? _enemyChosen.Data.Number : -1;
 
-        // 특수 카드 효과 적용(조커 = 무승부 강제 등).
-        ShowdownResult sr = new ShowdownResult { PlayerNumber = p, EnemyNumber = e };
+        // 이번 라운드에 각 측이 특수카드를 냈는지(다음 라운드 조건 + 이번 판정용).
+        bool playerSpecialNow = _playerChosen != null && _playerChosen.Data is SpecialCardData;
+        bool enemySpecialNow = _enemyChosen != null && _enemyChosen.Data is SpecialCardData;
+
+        // 특수 카드 효과 적용. 전 라운드 특수 여부(_..Last)를 넘겨 조건부 효과가 참조하게 한다.
+        ShowdownResult sr = new ShowdownResult
+        {
+            PlayerNumber = p,
+            EnemyNumber = e,
+            PlayerPlayedSpecialLast = _playerSpecialLast,
+            EnemyPlayedSpecialLast = _enemySpecialLast,
+            PlayerCardIsSpecial = playerSpecialNow,
+            EnemyCardIsSpecial = enemySpecialNow,
+            // 지난 라운드에 예약된 2배를 이번 라운드 승점에 적용(소비).
+            PlayerWinPoints = _playerDoubleNext ? 2 : 1,
+            EnemyWinPoints = _enemyDoubleNext ? 2 : 1,
+        };
+        _playerDoubleNext = false;
+        _enemyDoubleNext = false;
+
         if (_playerChosen != null && _playerChosen.Data is SpecialCardData ps) ps.OnShowdown(sr, true);
         if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData es) es.OnShowdown(sr, false);
 
-        int cmp = sr.ForceDraw ? 0 : CompareCards(sr.PlayerNumber, sr.EnemyNumber);
+        // 리버스 교환: 두 카드가 서로 상대 자리로 이동 → 멈춘 뒤 판정.
+        if (sr.SwapCards)
+        {
+            AnimateSwap();
+            Tw.Delay(swapMoveDuration, () => Finalize(sr));
+        }
+        else
+        {
+            Finalize(sr);
+        }
+    }
+
+    // 승부 카드 두 장을 서로의 승부 슬롯 위치로 이동.
+    void AnimateSwap()
+    {
+        if (_playerChosen != null && enemyField.ShowdownSlot != null)
+            MoveCardToWorld(_playerChosen, enemyField.ShowdownSlot.position);
+        if (_enemyChosen != null && playerField.ShowdownSlot != null)
+            MoveCardToWorld(_enemyChosen, playerField.ShowdownSlot.position);
+    }
+
+    void MoveCardToWorld(FieldCard card, Vector3 worldPos)
+    {
+        Transform parent = card.transform.parent;
+        Vector3 local = parent != null ? parent.InverseTransformPoint(worldPos) : worldPos;
+        card.PlaceAt(local, swapMoveDuration, swapMoveEase);
+    }
+
+    // 판정 + 점수 + 버림 + 다음 라운드.
+    void Finalize(ShowdownResult sr)
+    {
+        if (_gameOver) return;
+
+        int cmp;
+        if (sr.ForceDraw) cmp = 0;
+        else if (sr.ForceOutcome) cmp = sr.ForcedCmp;
+        else cmp = CompareCards(sr.PlayerNumber, sr.EnemyNumber);
         string result;
-        if (cmp > 0) { _playerScore++; result = "플레이어 승"; SetMessage("승리!"); }
-        else if (cmp < 0) { _enemyScore++; result = "적 승"; SetMessage("패배..."); }
+        if (cmp > 0) { _playerScore += sr.PlayerWinPoints; result = $"플레이어 승(+{sr.PlayerWinPoints})"; SetMessage("승리!"); }
+        else if (cmp < 0) { _enemyScore += sr.EnemyWinPoints; result = $"적 승(+{sr.EnemyWinPoints})"; SetMessage("패배..."); }
         else { result = "무승부"; SetMessage("무승부"); }
 
-        Debug.Log($"[Battle] 플레이어 {p} vs 적 {e} → {result} | 점수 {_playerScore} : {_enemyScore}");
+        Debug.Log($"[Battle] 플레이어 {sr.PlayerNumber} vs 적 {sr.EnemyNumber} → {result} | 점수 {_playerScore} : {_enemyScore}");
         UpdateScoreUI();
 
-        // 승부에 올린 카드 + 필드에 남은 모든 카드를 각자 버린 더미로.
-        playerField.DiscardCard(_playerChosen, _playerPile);
-        enemyField.DiscardCard(_enemyChosen, _enemyPile);
-        playerField.DiscardAll(_playerPile);
-        enemyField.DiscardAll(_enemyPile);
+        // 다음 라운드용: 이번에 예약된 2배 + 특수 여부 갱신.
+        _playerDoubleNext = sr.PlayerDoubleNextRound;
+        _enemyDoubleNext = sr.EnemyDoubleNextRound;
+        _playerSpecialLast = sr.PlayerCardIsSpecial;
+        _enemySpecialLast = sr.EnemyCardIsSpecial;
+
+        // 승부에 사용된 카드만 각자 버린 더미로. 리버스 교환 시 소유 더미를 서로 바꿔 버린다.
+        if (sr.SwapCards)
+        {
+            playerField.DiscardCard(_playerChosen, _enemyPile); // 내 리버스 → 상대 더미
+            enemyField.DiscardCard(_enemyChosen, _playerPile);  // 상대 숫자카드 → 내 더미
+        }
+        else
+        {
+            playerField.DiscardCard(_playerChosen, _playerPile);
+            enemyField.DiscardCard(_enemyChosen, _enemyPile);
+        }
         _playerChosen = null;
         _enemyChosen = null;
 
