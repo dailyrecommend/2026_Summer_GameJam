@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd2d02a888de0254184c03e42b1b9518, type: 3}
+  m_Name: Bang!_Bang!
+  m_EditorClassIdentifier: Assembly-CSharp::SpecialCardData
+  id: BBA
+  displayName: "\uBC45!"
+  description: "\uC0C1\uB300 \uACE0\uC720 \uCE74\uB4DC \uC911 \uD558\uB098\uB97C
+    \uBB34\uC791\uC704\uB85C \uBC84\uB9BD\uB2C8\uB2E4. \uC131\uACF5 \uC2DC \uC2B9\uB9AC\uD558\uACE0
+    \uC2E4\uD328\uC2DC \uD574\uB2F9 \uCE74\uB4DC\uB294 4\uB85C \uAC04\uC8FC\uD569\uB2C8\uB2E4."
+  texture: {fileID: 2800000, guid: d8631c510ce8a324fb4479926b0197ba, type: 3}
+  number: 0
+  effect: 0

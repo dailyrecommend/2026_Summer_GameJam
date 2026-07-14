@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd2d02a888de0254184c03e42b1b9518, type: 3}
-  m_Name: Davinci_DavinciJoker
+  m_Name: Bang!_Beer
   m_EditorClassIdentifier: Assembly-CSharp::SpecialCardData
-  id: DDJ
-  displayName: "\uB2E4\uBE48\uCE58 \uC870\uCEE4"
-  description: "0~13\uC758 \uC22B\uC790\uB85C \uBB34\uC791\uC704\uB85C \uBCC0\uD654\uD569\uB2C8\uB2E4. "
-  texture: {fileID: 2800000, guid: 612fca038d7863645967db6cc21798a3, type: 3}
-  number: 7
-  effect: 2
+  id: BBE
+  displayName: "\uB9E5\uC8FC"
+  description: "\uC0C1\uB300\uAC00 \uACE0\uC720 \uCE74\uB4DC\uB97C \uB0B8\uB2E4\uBA74
+    \uC2B9\uC810\uC744 \uD68C\uBCF5\uD55C\uB2E4. \uC2E4\uD328 \uC2DC \uD574\uB2F9
+    \uCE74\uB4DC\uB294 3\uC73C\uB85C \uAC04\uC8FC\uD55C\uB2E4."
+  texture: {fileID: 2800000, guid: 1deb5c4f97a2016458d142a327053097, type: 3}
+  number: 0
+  effect: 0

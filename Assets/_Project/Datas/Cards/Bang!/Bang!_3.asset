@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e422e8600873b94d9592d60a3368f22, type: 3}
+  m_Name: Bang!_3
+  m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
+  id: B3
+  displayName: 3
+  description: "3 \uC785\uB2C8\uB2E4."
+  texture: {fileID: 2800000, guid: 9d6f6d682adfe8a42a82c063bfcc177f, type: 3}
+  number: 3
