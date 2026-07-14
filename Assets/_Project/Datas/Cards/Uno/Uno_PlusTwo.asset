@@ -18,3 +18,4 @@ MonoBehaviour:
     only for the player who played this card.
   texture: {fileID: 2800000, guid: 5c635d76042c9a24e80cf22d732fb7ac, type: 3}
   number: 8
+  effect: 3
