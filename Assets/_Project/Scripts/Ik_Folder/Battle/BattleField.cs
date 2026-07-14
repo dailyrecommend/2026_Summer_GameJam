@@ -33,6 +33,12 @@ public class BattleField : MonoBehaviour
     [SerializeField] float dealDuration = 0.25f;
     [SerializeField] Ease dealEase = Ease.OutCubic;
 
+    [Header("공개(리빌) 연출 - 전부 도착 후 순차적으로 뒤집기")]
+    [Tooltip("4장 모두 도착한 뒤 뒤집기 시작까지 대기 시간")]
+    [SerializeField] float revealPause = 0.35f;
+    [Tooltip("카드 사이 뒤집는 간격")]
+    [SerializeField] float revealStagger = 0.15f;
+
     [Header("승부")]
     [Tooltip("승부에 올린 카드가 이동할 위치")]
     [SerializeField] Transform showdownSlot;
@@ -72,18 +78,22 @@ public class BattleField : MonoBehaviour
     }
 
     /// <summary>기존 카드를 지우고 새로 배치.</summary>
-    public void Deal(IEnumerable<CardData> source)
+    public void Deal(IEnumerable<CardData> source, System.Action onRevealed = null)
     {
         Clear();
         List<CardData> list = new List<CardData>(source);
         if (list.Count > maxCards) list = list.GetRange(0, maxCards);
-        AddCards(list);
+        AddCards(list, onRevealed);
     }
 
-    /// <summary>카드들을 필드에 추가(드로우 더미에서 뒷면으로 나와 도착 시 앞면). 기존 카드는 유지·재정렬.</summary>
-    public void AddCards(IEnumerable<CardData> newData)
+    /// <summary>
+    /// 카드들을 필드에 추가(드로우 더미에서 뒷면으로 나와 이동). 기존 카드는 유지·재정렬.
+    /// 새로 온 카드들은 전부 도착한 뒤 잠깐 대기했다가 좌→우 순서로 하나씩 뒤집힌다.
+    /// onRevealed는 그 공개가 전부 끝났을 때 호출(그 전까지 상호작용을 막는 용도로 쓸 것).
+    /// </summary>
+    public void AddCards(IEnumerable<CardData> newData, System.Action onRevealed = null)
     {
-        if (cardPrefab == null) return;
+        if (cardPrefab == null) { onRevealed?.Invoke(); return; }
         Transform parent = cardParent != null ? cardParent : transform;
         Vector3 pileLocal = drawPile != null ? parent.InverseTransformPoint(drawPile.position) : Vector3.zero;
 
@@ -98,13 +108,20 @@ public class BattleField : MonoBehaviour
             _cards.Add(card);
             added.Add(card);
         }
+
+        if (added.Count == 0) { Reposition(null); onRevealed?.Invoke(); return; }
+
         Reposition(added);
+
+        // 마지막 카드가 도착하는 시점 = (장수-1)*스태거 + 이동시간. 그 후 대기했다가 순차 공개.
+        float lastArrival = (added.Count - 1) * dealStagger + dealDuration;
+        Tw.Delay(lastArrival + revealPause, () => RevealSequence(added, onRevealed));
     }
 
     /// <summary>현재 카드들을 중앙 정렬로 재배치(즉시).</summary>
     public void Arrange() => Reposition(null);
 
-    // dealNew에 든 카드는 더미에서 휙 날아와 도착 시 앞면으로, 나머지는 즉시 정렬.
+    // dealNew에 든 카드는 더미에서 휙 날아오되(뒷면 유지, 도착해도 안 뒤집음), 나머지는 즉시 정렬.
     void Reposition(List<FieldCard> dealNew)
     {
         _cards.Sort((a, b) => a.Data.Number.CompareTo(b.Data.Number)); // 좌:낮음, 우:높음
@@ -134,14 +151,33 @@ public class BattleField : MonoBehaviour
             {
                 float delay = dealIndex * dealStagger;
                 dealIndex++;
-                FieldCard c = card;
-                card.PlaceAt(target, dealDuration, dealEase, delay, () => c.FlipUp());
+                // 도착해도 뒤집지 않음(공개는 따로 순차 진행). 드로우 사운드는 PlaceAt이 공통 처리.
+                card.PlaceAt(target, dealDuration, dealEase, delay);
             }
             else
             {
                 card.PlaceAt(target, arrangeDuration, arrangeEase);
             }
         }
+    }
+
+    // 카드들을 좌→우(정렬된 순서)로 하나씩 순차 공개. 전부 끝나면 onDone 호출.
+    void RevealSequence(List<FieldCard> cards, System.Action onDone)
+    {
+        List<FieldCard> ordered = new List<FieldCard>(cards);
+        ordered.Sort((a, b) => a.Data.Number.CompareTo(b.Data.Number));
+
+        float maxFlipDuration = 0f;
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            FieldCard c = ordered[i];
+            float delay = i * revealStagger;
+            Tw.Delay(delay, () => { if (c != null) c.FlipUp(); });
+            maxFlipDuration = Mathf.Max(maxFlipDuration, c.FlipDuration);
+        }
+
+        float total = (ordered.Count - 1) * revealStagger + maxFlipDuration;
+        Tw.Delay(total, () => onDone?.Invoke());
     }
 
     // ── 승부/제거 ─────────────────────────────────────────────

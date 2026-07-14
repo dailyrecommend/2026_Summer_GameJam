@@ -28,6 +28,7 @@ public class FieldCard : MonoBehaviour
     [SerializeField] Vector3 flipAxis = Vector3.right;
     [SerializeField] float flipDuration = 0.25f;
     [SerializeField] Ease flipEase = Ease.OutQuad;
+    public float FlipDuration => flipDuration;
 
     [Header("호버 기울기 (커서 쪽으로 기움)")]
     [SerializeField] float tiltMaxAngle = 12f;
@@ -103,6 +104,7 @@ public class FieldCard : MonoBehaviour
         _flipTween?.Kill();
         _faceDown = false;
         _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, 0f, flipDuration).SetEase(flipEase);
+        if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardFlip);
     }
 
     public void Bind(CardData data)
@@ -125,13 +127,20 @@ public class FieldCard : MonoBehaviour
         transform.localPosition = localPos;
     }
 
-    /// <summary>배치 위치(로컬)로 이동. 상승 상태는 해제. delay만큼 늦게 출발, 도착 시 onArrived 호출.</summary>
+    /// <summary>
+    /// 배치 위치(로컬)로 이동. 상승 상태는 해제. delay만큼 늦게 출발, 도착 시 onArrived 호출.
+    /// 딜/재정렬/승부이동/버림/리셔플/교환 등 '카드 위치가 옮겨지는' 모든 경로가 이걸 거쳐가므로,
+    /// 실제 이동이 시작되는 시점(delay 이후)에 공통으로 드로우 사운드를 재생한다.
+    /// </summary>
     public void PlaceAt(Vector3 localPos, float duration, Ease ease, float delay = 0f, System.Action onArrived = null)
     {
         _homePos = localPos;
         _raised = false;
         ApplyMove(duration, ease, delay, onArrived);
         ApplyScale(duration, ease);
+
+        if (AudioManager.instance != null)
+            Tw.Delay(delay, () => AudioManager.instance.PlaySfx(AudioManager.Sfx.CardDraw));
     }
 
     public void SetHovered(bool value)
@@ -139,6 +148,7 @@ public class FieldCard : MonoBehaviour
         if (_hovered == value) return;
         _hovered = value;
         ApplyScale(hoverDuration, hoverEase);
+        if (_hovered && AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardHover);
     }
 
     public void SetRaised(bool value)
@@ -146,6 +156,7 @@ public class FieldCard : MonoBehaviour
         if (_raised == value) return;
         _raised = value;
         ApplyMove(moveDuration, moveEase);
+        if (_raised && AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardSelect);
     }
 
     void ApplyMove(float duration, Ease ease, float delay = 0f, System.Action onArrived = null)

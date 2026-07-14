@@ -60,6 +60,10 @@ public class ScreenFlowController : MonoBehaviour
     [Tooltip("전투 패널 도착 완료 시 호출. 여기에 BattleManager.StartBattle 등을 연결")]
     [SerializeField] UnityEngine.Events.UnityEvent onEnteredBattle;
 
+    [Header("오디오")]
+    [Tooltip("전투(battleIndex) 화면이 아닌 곳(메인/스테이지 등)에 도착하면 재생할 비전투 브금")]
+    [SerializeField] AudioClip nonCombatBgm;
+
     Vector3 _baseRootPos;
     int _current;
     Tween _active;
@@ -203,6 +207,10 @@ public class ScreenFlowController : MonoBehaviour
         _current = index;
         UpdateParallax(index);
 
+        // 실제로 다른 화면으로 바뀔 때만(제자리 스냅 되돌림은 제외) 전환 사운드.
+        if (index != prev && AudioManager.instance != null)
+            AudioManager.instance.PlaySfx(AudioManager.Sfx.PanelSwitch);
+
         // 전환 중에는 지나가는 패널이 보여야 하므로 출발~도착 구간을 켠다.
         // 이동이 끝날 때까지는 아무것도 끄지 않는다(완료 시 ActivateOnly로 정리).
         int lo = Mathf.Min(prev, index);
@@ -238,6 +246,11 @@ public class ScreenFlowController : MonoBehaviour
     {
         for (int i = 0; i < screens.Length; i++)
             SetPanelActive(i, i == index);
+
+        // 전투 화면이 아닌 곳(메인/스테이지 등)에 도착하면 비전투 브금으로 전환.
+        // 전투 브금은 BattleManager.StartBattle이 스테이지별로 직접 재생한다.
+        if (index != battleIndex && AudioManager.instance != null)
+            AudioManager.instance.PlayBgm(nonCombatBgm);
     }
 
     void SetPanelActive(int index, bool active)

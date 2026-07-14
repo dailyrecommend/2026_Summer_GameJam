@@ -210,7 +210,11 @@ public class StageCarousel : MonoBehaviour
         _snapTween?.Kill();
         _snapTween = content.DOLocalMoveX(-index * spacing, snapDuration).SetEase(snapEase);
 
-        if (changed) OnStageChanged?.Invoke(_index);
+        if (changed)
+        {
+            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.StageSwitch);
+            OnStageChanged?.Invoke(_index);
+        }
     }
 
     public void Next() => SnapTo(_index + 1);

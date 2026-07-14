@@ -1604,6 +1604,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  nonCombatBgm: {fileID: 8300000, guid: cd3d2657281a69a418fb99973fde69b9, type: 3}
 --- !u!4 &771978778
 Transform:
   m_ObjectHideFlags: 0
@@ -2428,6 +2429,7 @@ MonoBehaviour:
   boardSpawnPoint: {fileID: 351588586}
   boardMoveDuration: 0.5
   boardMoveEase: 8
+  defaultBattleBgm: {fileID: 0}
   progress: {fileID: 1959706087}
   stageScreenIndex: 1
   endReturnDelay: 1.5
@@ -3173,7 +3175,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   bgmClips:
-  - {fileID: 8300000, guid: cd3d2657281a69a418fb99973fde69b9, type: 3}
+  - {fileID: 0}
   bgmVolume: 0.5
   sfxClips: []
   sfxVolume: 0.5

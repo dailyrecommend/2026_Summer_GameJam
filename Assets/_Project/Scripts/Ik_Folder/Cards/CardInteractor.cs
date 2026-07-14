@@ -64,7 +64,11 @@ public class CardInteractor : MonoBehaviour
         // 3) 클릭 처리
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            if (_hovered != null) CardClicked?.Invoke(_hovered.Data);
+            if (_hovered != null)
+            {
+                if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardSelect);
+                CardClicked?.Invoke(_hovered.Data);
+            }
             else BackgroundClicked?.Invoke();
         }
 

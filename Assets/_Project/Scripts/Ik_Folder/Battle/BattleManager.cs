@@ -26,6 +26,10 @@ public class BattleManager : MonoBehaviour
     [SerializeField] float boardMoveDuration = 0.5f;
     [SerializeField] TweenKit.Ease boardMoveEase = TweenKit.Ease.OutCubic;
 
+    [Header("오디오")]
+    [Tooltip("스테이지에 브금이 지정 안 됐을 때 재생할 기본 전투 브금")]
+    [SerializeField] AudioClip defaultBattleBgm;
+
     [Header("클리어/복귀/보상")]
     [SerializeField] StageProgress progress;
     [Tooltip("전투 종료 후 돌아갈 스테이지 화면 인덱스")]
@@ -116,6 +120,10 @@ public class BattleManager : MonoBehaviour
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
 
+        // 스테이지별 전투 브금(없으면 기본 전투 브금).
+        AudioClip bgm = (_activeStage != null && _activeStage.StageBgm != null) ? _activeStage.StageBgm : defaultBattleBgm;
+        if (AudioManager.instance != null) AudioManager.instance.PlayBgm(bgm);
+
         float boardDelay = SpawnBoardGame();
 
         List<CardData> pCards = new List<CardData>();
@@ -175,14 +183,27 @@ public class BattleManager : MonoBehaviour
     {
         if (_gameOver) return;
 
-        RefillField(playerField, _playerPile);
-        RefillField(enemyField, _enemyPile);
+        // 카드가 다 뒤집히기 전까지는 상호작용 막기.
+        if (playerInteractor != null) playerInteractor.SetLocked(true);
+        _waitingPlayer = false;
+        SetMessage("카드를 뽑는 중...");
 
-        _playerChosen = null;
-        _enemyChosen = null;
-        _waitingPlayer = true;
-        if (playerInteractor != null) playerInteractor.SetLocked(false);
-        SetMessage("카드를 선택하세요");
+        int pending = 2;
+        System.Action onSideRevealed = () =>
+        {
+            pending--;
+            if (pending > 0) return; // 양쪽 다 완전히 공개될 때까지 대기
+
+            if (_gameOver) return;
+            _playerChosen = null;
+            _enemyChosen = null;
+            _waitingPlayer = true;
+            if (playerInteractor != null) playerInteractor.SetLocked(false);
+            SetMessage("카드를 선택하세요");
+        };
+
+        RefillField(playerField, _playerPile, onSideRevealed);
+        RefillField(enemyField, _enemyPile, onSideRevealed);
     }
 
     bool NeedReshuffle(BattleField field, CardPile pile)
@@ -191,7 +212,7 @@ public class BattleManager : MonoBehaviour
         return pile.DrawCount < need && pile.DiscardCount > 0;
     }
 
-    void RefillField(BattleField field, CardPile pile)
+    void RefillField(BattleField field, CardPile pile, System.Action onRevealed)
     {
         int need = handSize - field.Cards.Count;
         List<CardData> drawn = new List<CardData>();
@@ -200,7 +221,8 @@ public class BattleManager : MonoBehaviour
             CardData c = pile.Draw();
             if (c != null) drawn.Add(c);
         }
-        if (drawn.Count > 0) field.AddCards(drawn);
+        if (drawn.Count > 0) field.AddCards(drawn, onRevealed);
+        else onRevealed?.Invoke();
     }
 
     // 플레이어가 승부에 올림 → 적도 선택 → 공개

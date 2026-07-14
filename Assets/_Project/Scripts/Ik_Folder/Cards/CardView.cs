@@ -101,13 +101,14 @@ public class CardView : MonoBehaviour
         }
     }
 
-    /// <summary>DeckView가 호출: 정렬된 홈 위치/스케일 지정 후 이동(호버 상태 반영).</summary>
+    /// <summary>DeckView가 호출: 정렬된 홈 위치/스케일 지정 후 이동(호버 상태 반영). 재배치도 '위치가 옮겨지는' 경우라 드로우 사운드.</summary>
     public void SetHome(Vector3 localPos, Vector3 localScale, float duration, Ease ease)
     {
         _homePos = localPos;
         _homeScale = localScale;
         ApplyMove(duration, ease);
         ApplyScale(duration, Ease.OutBack);
+        if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardDraw);
     }
 
     /// <summary>호버 상태 반영(확대/축소).</summary>
@@ -117,6 +118,7 @@ public class CardView : MonoBehaviour
         _hovered = value;
         ApplyMove(hoverDuration, hoverEase);
         ApplyScale(hoverDuration, hoverEase);
+        if (_hovered && AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardHover);
     }
 
     void ApplyMove(float duration, Ease ease)
@@ -142,6 +144,7 @@ public class CardView : MonoBehaviour
         _flipTween?.Kill();
         // 각도만 갱신. 실제 회전 합성은 LateUpdate가 한다(기울기와 충돌 방지).
         _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, to, flipDuration).SetEase(flipEase);
+        if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardFlip);
     }
 
     public bool IsFlipped => _flipped;

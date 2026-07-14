@@ -26,3 +26,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}
   aiStyle: 1
   firstClearReward: {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}
+  stageBgm: {fileID: 8300000, guid: b4ff9ee79527e124781b2ca92ad9ce00, type: 3}

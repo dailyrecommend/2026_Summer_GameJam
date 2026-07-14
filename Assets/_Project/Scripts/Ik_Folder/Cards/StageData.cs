@@ -26,6 +26,10 @@ public class StageData : ScriptableObject
     [Tooltip("최초 클리어 시 지급하는 카드")]
     [SerializeField] CardData firstClearReward;
 
+    [Header("오디오")]
+    [Tooltip("이 스테이지 전투 시작 시 재생할 브금")]
+    [SerializeField] AudioClip stageBgm;
+
     public string Id => id;
     public string DisplayName => displayName;
     public string Description => description;
@@ -33,4 +37,5 @@ public class StageData : ScriptableObject
     public IReadOnlyList<CardData> EnemyDeck => enemyDeck;
     public AIStyle AiStyle => aiStyle;
     public CardData FirstClearReward => firstClearReward;
+    public AudioClip StageBgm => stageBgm;
 }
