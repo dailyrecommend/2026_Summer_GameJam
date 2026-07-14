@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 스테이지 정의(ScriptableObject). 스테이지마다 적 덱/생김새/보상이 다르다.
-/// AI 성향은 지금은 공통(가장 큰 카드)이라 여기엔 없음 — 나중에 성향이 생기면 필드 추가.
+/// 스테이지 정의(ScriptableObject). 스테이지마다 적 덱/생김새/보상/AI 성향이 다르다.
 /// </summary>
 [CreateAssetMenu(menuName = "CardBoardWar/Stage", fileName = "Stage")]
 public class StageData : ScriptableObject
@@ -20,6 +19,8 @@ public class StageData : ScriptableObject
     [Header("적")]
     [Tooltip("이 스테이지 적의 덱(뽑을 더미 소스). 비우면 플레이어 덱 복사")]
     [SerializeField] List<CardData> enemyDeck = new List<CardData>();
+    [Tooltip("이 스테이지 적의 카드 선택 성향. 개별 로직에 해당 없으면 공통 로직으로 대체")]
+    [SerializeField] AIStyle aiStyle = AIStyle.None;
 
     [Header("보상")]
     [Tooltip("최초 클리어 시 지급하는 카드")]
@@ -30,5 +31,6 @@ public class StageData : ScriptableObject
     public string Description => description;
     public GameObject BoardGamePrefab => boardGamePrefab;
     public IReadOnlyList<CardData> EnemyDeck => enemyDeck;
+    public AIStyle AiStyle => aiStyle;
     public CardData FirstClearReward => firstClearReward;
 }

@@ -19,4 +19,4 @@ MonoBehaviour:
     \uC2E4\uD328\uC2DC \uD574\uB2F9 \uCE74\uB4DC\uB294 4\uB85C \uAC04\uC8FC\uD569\uB2C8\uB2E4."
   texture: {fileID: 2800000, guid: d8631c510ce8a324fb4479926b0197ba, type: 3}
   number: 7
-  effect: 0
+  effect: 5

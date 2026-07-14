@@ -32,4 +32,18 @@ public class ShowdownResult
 
     /// <summary>true면 두 승부 카드를 교환(숫자는 이미 교환됨, 소유 더미도 서로 바꿈). 리버스.</summary>
     public bool SwapCards;
+
+    /// <summary>true면 '다음 라운드' 그 측이 이겨도 승점을 얻지 못함(빗나감). 2배 예약보다 우선.</summary>
+    public bool PlayerNoWinNextRound;
+    public bool EnemyNoWinNextRound;
+
+    /// <summary>필드/더미 참조. Bang처럼 상대 필드의 카드를 직접 조작하는 효과용(BattleManager가 채움).</summary>
+    public BattleField PlayerField;
+    public BattleField EnemyField;
+    public CardPile PlayerPile;
+    public CardPile EnemyPile;
+
+    /// <summary>true면 상대 점수를 1점 깎는다(0점이면 그대로). 맥주.</summary>
+    public bool PlayerStealPoint; // 플레이어가 상대(적) 점수를 깎음
+    public bool EnemyStealPoint;  // 적이 상대(플레이어) 점수를 깎음
 }

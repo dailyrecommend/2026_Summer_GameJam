@@ -73,6 +73,7 @@ public class BattleManager : MonoBehaviour
     FieldCard _playerChosen, _enemyChosen;
     bool _playerSpecialLast, _enemySpecialLast; // 전 라운드에 특수카드를 냈는지
     bool _playerDoubleNext, _enemyDoubleNext;   // 다음 라운드 승점 2배 예약(드로우 2)
+    bool _playerNoWinNext, _enemyNoWinNext;     // 다음 라운드 승점 무효 예약(빗나감)
     GameObject _boardGameInstance;              // 현재 스테이지 보드게임 생성물
     StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
     int _activeStageIndex = -1;
@@ -107,6 +108,8 @@ public class BattleManager : MonoBehaviour
         _enemySpecialLast = false;
         _playerDoubleNext = false;
         _enemyDoubleNext = false;
+        _playerNoWinNext = false;
+        _enemyNoWinNext = false;
         UpdateScoreUI();
         SetMessage("");
 
@@ -211,24 +214,12 @@ public class BattleManager : MonoBehaviour
         _playerChosen = card;
         playerField.CommitCard(card);
 
-        _enemyChosen = PickHighestCard(enemyField.Cards);
+        AIStyle style = _activeStage != null ? _activeStage.AiStyle : AIStyle.None;
+        _enemyChosen = EnemyAI.ChooseCard(style, enemyField.Cards, playerField.Cards, _playerSpecialLast);
         if (_enemyChosen != null) enemyField.CommitCard(_enemyChosen);
 
         SetMessage("승부!");
         Tw.Delay(revealDelay, Resolve);
-    }
-
-    // TestAI: 필드 카드 중 숫자가 가장 높은 것을 선택.
-    static FieldCard PickHighestCard(IReadOnlyList<FieldCard> cards)
-    {
-        FieldCard best = null;
-        for (int i = 0; i < cards.Count; i++)
-        {
-            FieldCard c = cards[i];
-            if (c == null || c.Data == null) continue;
-            if (best == null || c.Data.Number > best.Data.Number) best = c;
-        }
-        return best;
     }
 
     void Resolve()
@@ -251,12 +242,18 @@ public class BattleManager : MonoBehaviour
             EnemyPlayedSpecialLast = _enemySpecialLast,
             PlayerCardIsSpecial = playerSpecialNow,
             EnemyCardIsSpecial = enemySpecialNow,
-            // 지난 라운드에 예약된 2배를 이번 라운드 승점에 적용(소비).
-            PlayerWinPoints = _playerDoubleNext ? 2 : 1,
-            EnemyWinPoints = _enemyDoubleNext ? 2 : 1,
+            // 지난 라운드에 예약된 2배/승점무효를 이번 라운드 승점에 적용(소비). 승점무효가 2배보다 우선.
+            PlayerWinPoints = _playerNoWinNext ? 0 : (_playerDoubleNext ? 2 : 1),
+            EnemyWinPoints = _enemyNoWinNext ? 0 : (_enemyDoubleNext ? 2 : 1),
+            PlayerField = playerField,
+            EnemyField = enemyField,
+            PlayerPile = _playerPile,
+            EnemyPile = _enemyPile,
         };
         _playerDoubleNext = false;
         _enemyDoubleNext = false;
+        _playerNoWinNext = false;
+        _enemyNoWinNext = false;
 
         if (_playerChosen != null && _playerChosen.Data is SpecialCardData ps) ps.OnShowdown(sr, true);
         if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData es) es.OnShowdown(sr, false);
@@ -303,12 +300,18 @@ public class BattleManager : MonoBehaviour
         else if (cmp < 0) { _enemyScore += sr.EnemyWinPoints; result = $"적 승(+{sr.EnemyWinPoints})"; SetMessage("패배..."); }
         else { result = "무승부"; SetMessage("무승부"); }
 
+        // 맥주: 상대 점수를 1점 회수(0점이면 그대로).
+        if (sr.PlayerStealPoint && _enemyScore > 0) { _enemyScore--; Debug.Log("[특수] 맥주 → 적 점수 1 회수"); }
+        if (sr.EnemyStealPoint && _playerScore > 0) { _playerScore--; Debug.Log("[특수] 맥주 → 플레이어 점수 1 회수"); }
+
         Debug.Log($"[Battle] 플레이어 {sr.PlayerNumber} vs 적 {sr.EnemyNumber} → {result} | 점수 {_playerScore} : {_enemyScore}");
         UpdateScoreUI();
 
-        // 다음 라운드용: 이번에 예약된 2배 + 특수 여부 갱신.
+        // 다음 라운드용: 이번에 예약된 2배/승점무효 + 특수 여부 갱신.
         _playerDoubleNext = sr.PlayerDoubleNextRound;
         _enemyDoubleNext = sr.EnemyDoubleNextRound;
+        _playerNoWinNext = sr.PlayerNoWinNextRound;
+        _enemyNoWinNext = sr.EnemyNoWinNextRound;
         _playerSpecialLast = sr.PlayerCardIsSpecial;
         _enemySpecialLast = sr.EnemyCardIsSpecial;
 
