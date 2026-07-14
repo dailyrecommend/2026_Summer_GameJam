@@ -103,7 +103,18 @@ public class AudioManager : MonoBehaviour
             break;
         }
     }
-
-
+    public void SetBgmVolume(float volume)
+    {
+        bgmVolume = volume;
+        bgmPlayer.volume = bgmVolume;
+    }
+    public void SetSfxVolume(float volume)
+    {
+        sfxVolume = volume;
+        foreach (AudioSource player in sfxPlayers)
+        {
+            player.volume = sfxVolume;
+        }
+    }
 
 }
