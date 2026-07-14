@@ -724,7 +724,7 @@ MonoBehaviour:
   dialogueList:
   - {fileID: 11400000, guid: 9b59a8756ed1a864386142693f6ca828, type: 2}
   - {fileID: 11400000, guid: 96aeff213a176464b92393ca633f6054, type: 2}
-  typingSpeed: 0.05
+  typingSpeed: 0.1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
