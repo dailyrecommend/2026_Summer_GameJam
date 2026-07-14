@@ -8,9 +8,13 @@ public class AudioManager : MonoBehaviour
 
     public enum Sfx { };//나중에 사운드 넣으면 추가하기
 
+    public enum Bgm { }//bgm받고 추가하기
+    
+    
+
 
     [Header("#BGM")]
-    public AudioClip bgmClip;
+    public AudioClip[] bgmClips;
     [Range(0f, 1f)]
     public float bgmVolume=0.5f;
     AudioSource bgmPlayer;
@@ -59,7 +63,7 @@ public class AudioManager : MonoBehaviour
         bgmPlayer.volume = bgmVolume;
 
         // 재생할 음악 지정
-        bgmPlayer.clip = bgmClip;
+        bgmPlayer.clip = bgmClips[0];
 
         // 음악 재생
         bgmPlayer.Play();
@@ -116,5 +120,15 @@ public class AudioManager : MonoBehaviour
             player.volume = sfxVolume/100f;
         }
     }
+    public void PlayBgm(Bgm bgm)
+    {
+        int index = (int)bgm;
 
+        if (bgmPlayer.clip == bgmClips[index])
+            return;
+
+        bgmPlayer.Stop();
+        bgmPlayer.clip = bgmClips[index];
+        bgmPlayer.Play();
+    }
 }
