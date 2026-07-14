@@ -106,7 +106,7 @@ public class ScreenFlowController : MonoBehaviour
         if (Mouse.current == null) return;
 
         var lmb = Mouse.current.leftButton;
-        if (lmb.wasPressedThisFrame) BeginDrag();
+        if (lmb.wasPressedThisFrame) { if (!UIPointer.IsOverUI) BeginDrag(); }
         else if (_dragging && lmb.isPressed) UpdateDrag();
         else if (_dragging && lmb.wasReleasedThisFrame) EndDrag();
     }

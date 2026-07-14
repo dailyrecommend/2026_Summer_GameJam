@@ -33,6 +33,7 @@ public class ClickableObject3D : MonoBehaviour
         if (_consumed) return;
         if (Mouse.current == null || cam == null) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame) return;
+        if (UIPointer.IsOverUI) return;
 
         Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity) && hit.collider == _col)

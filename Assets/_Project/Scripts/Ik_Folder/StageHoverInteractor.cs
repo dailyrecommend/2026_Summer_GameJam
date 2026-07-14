@@ -29,9 +29,12 @@ public class StageHoverInteractor : MonoBehaviour
         if (cam == null || Mouse.current == null) return;
 
         StageView hit = null;
-        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-        if (Physics.Raycast(ray, out RaycastHit info, Mathf.Infinity, stageMask))
-            hit = info.collider.GetComponentInParent<StageView>();
+        if (!UIPointer.IsOverUI)
+        {
+            Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out RaycastHit info, Mathf.Infinity, stageMask))
+                hit = info.collider.GetComponentInParent<StageView>();
+        }
 
         if (hit != _hovered)
         {

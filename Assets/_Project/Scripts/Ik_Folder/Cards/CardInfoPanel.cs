@@ -34,6 +34,17 @@ public class CardInfoPanel : MonoBehaviour
 
     bool _visible;
 
+    void Awake()
+    {
+        // 툴팁은 표시용이라 절대 레이캐스트를 막으면 안 됨(막으면 UIPointer.IsOverUI가
+        // 툴팁 자신을 '가리는 UI'로 오인해 카드 호버가 꺼지고 → 툴팁이 사라지는 깜빡임이 생김).
+        if (tooltipRoot == null) return;
+        CanvasGroup cg = tooltipRoot.GetComponent<CanvasGroup>();
+        if (cg == null) cg = tooltipRoot.gameObject.AddComponent<CanvasGroup>();
+        cg.blocksRaycasts = false;
+        cg.interactable = false;
+    }
+
     void OnEnable()
     {
         if (interactor != null)

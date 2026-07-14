@@ -95,7 +95,7 @@ public class StageCarousel : MonoBehaviour
         if (cam == null || Mouse.current == null || _count == 0) return;
 
         var lmb = Mouse.current.leftButton;
-        if (lmb.wasPressedThisFrame) BeginDrag();
+        if (lmb.wasPressedThisFrame) { if (!UIPointer.IsOverUI) BeginDrag(); }
         else if (_dragging && lmb.isPressed) UpdateDrag();
         else if (_dragging && lmb.wasReleasedThisFrame) EndDrag();
     }

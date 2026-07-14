@@ -44,7 +44,7 @@ public class BattleFieldInteractor : MonoBehaviour
         // 1) 커서 아래 필드 카드 찾기
         FieldCard hit = null;
         Vector3 hitPoint = default;
-        if (!_locked)
+        if (!_locked && !UIPointer.IsOverUI)
         {
             Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit info, Mathf.Infinity, fieldMask))
@@ -72,7 +72,7 @@ public class BattleFieldInteractor : MonoBehaviour
         }
 
         // 3) 클릭 처리 (호버 전용이면 생략)
-        if (_locked || hoverOnly) return;
+        if (_locked || hoverOnly || UIPointer.IsOverUI) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
         if (hit == null)

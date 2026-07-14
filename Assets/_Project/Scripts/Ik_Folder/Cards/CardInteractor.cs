@@ -33,6 +33,7 @@ public class CardInteractor : MonoBehaviour
     void Update()
     {
         if (cam == null || Mouse.current == null) return;
+        if (UIPointer.IsOverUI) { if (_hovered != null) { _hovered.SetHovered(false); _hovered = null; CardUnhovered?.Invoke(); } return; }
 
         // 1) 커서 아래 카드 찾기
         CardView hit = null;
