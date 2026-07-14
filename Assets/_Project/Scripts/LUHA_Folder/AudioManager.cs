@@ -11,14 +11,14 @@ public class AudioManager : MonoBehaviour
 
     [Header("#BGM")]
     public AudioClip bgmClip;
-    [Range(0f, 1f)]
-    public float bgmVolume;
+    [Range(0f, 100f)]
+    public float bgmVolume=50f;
     AudioSource bgmPlayer;
 
     [Header("#SFX")]
     public AudioClip[] sfxClips;
-    [Range(0f, 1f)]
-    public float sfxVolume;
+    [Range(0f, 100f)]
+    public float sfxVolume=50f;
     public int channels=20;
     AudioSource[] sfxPlayers;
     int channelIndex;
