@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Da
   displayName: Davinci Code
   description: Davinci Code
-  boardGamePrefab: {fileID: 6591248832598904911, guid: 152596b97c49e7941b8891814e6f3717, type: 3}
+  boardGamePrefab: {fileID: 2694011667810015443, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
   enemyDeck:
   - {fileID: 11400000, guid: 0c3a94abd546fde41acb838970eb211b, type: 2}
   - {fileID: 11400000, guid: 0778f94f35471e848a36d683be160795, type: 2}

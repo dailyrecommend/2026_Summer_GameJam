@@ -22,8 +22,10 @@ public class ScreenFlowController : MonoBehaviour
     [Header("카메라 패럴랙스")]
     [Tooltip("연결하면 아래 지정한 화면에서만 마우스 추종이 켜진다. (비워두면 무시)")]
     [SerializeField] CameraMouseParallax cameraParallax;
-    [Tooltip("패럴랙스를 켤 화면 인덱스. 기본 0(Main)만.")]
+    [Tooltip("패럴랙스를 켤 화면 인덱스. (아래 '모든 화면'이 꺼져 있을 때만 사용)")]
     [SerializeField] int parallaxScreenIndex = 0;
+    [Tooltip("체크하면 모든 화면에서 카메라 마우스 추종을 켠다.")]
+    [SerializeField] bool parallaxOnAllScreens = true;
 
     [Header("전환 연출")]
     [SerializeField] float duration = 0.7f;
@@ -247,7 +249,7 @@ public class ScreenFlowController : MonoBehaviour
     void UpdateParallax(int index)
     {
         if (cameraParallax != null)
-            cameraParallax.SetActive(index == parallaxScreenIndex);
+            cameraParallax.SetActive(parallaxOnAllScreens || index == parallaxScreenIndex);
     }
 
     Vector3 TargetRootPosFor(int index)

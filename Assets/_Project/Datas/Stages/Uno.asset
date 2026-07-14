@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Un
   displayName: Uno
   description: Uno
-  boardGamePrefab: {fileID: 6276025556862463245, guid: 9b567be8577b6bb489193b34a62243a0, type: 3}
+  boardGamePrefab: {fileID: 4790333913449733941, guid: 9d77ddb939bf256498aa2d6c447b3e5b, type: 3}
   enemyDeck:
   - {fileID: 11400000, guid: 9614ef141826fcf4e8a8ada1cb559e5b, type: 2}
   - {fileID: 11400000, guid: 99337c05d502b67418632b824b48ba22, type: 2}

@@ -18,6 +18,14 @@ public class BattleManager : MonoBehaviour
     [Tooltip("전투 중 화면 이동을 잠그기 위한 참조(선택)")]
     [SerializeField] ScreenFlowController screenFlow;
 
+    [Header("보드게임 표시")]
+    [Tooltip("스테이지의 Board Game Prefab이 최종적으로 놓일 부모")]
+    [SerializeField] Transform gameHolder;
+    [Tooltip("보드가 이 위치에서 시작해 holder로 이동(비우면 즉시 holder에 배치)")]
+    [SerializeField] Transform boardSpawnPoint;
+    [SerializeField] float boardMoveDuration = 0.5f;
+    [SerializeField] TweenKit.Ease boardMoveEase = TweenKit.Ease.OutCubic;
+
     [Header("클리어/복귀/보상")]
     [SerializeField] StageProgress progress;
     [Tooltip("전투 종료 후 돌아갈 스테이지 화면 인덱스")]
@@ -65,6 +73,7 @@ public class BattleManager : MonoBehaviour
     FieldCard _playerChosen, _enemyChosen;
     bool _playerSpecialLast, _enemySpecialLast; // 전 라운드에 특수카드를 냈는지
     bool _playerDoubleNext, _enemyDoubleNext;   // 다음 라운드 승점 2배 예약(드로우 2)
+    GameObject _boardGameInstance;              // 현재 스테이지 보드게임 생성물
     StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
     int _activeStageIndex = -1;
 
@@ -103,6 +112,8 @@ public class BattleManager : MonoBehaviour
 
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
+
+        SpawnBoardGame();
 
         List<CardData> pCards = new List<CardData>();
         if (playerDeck != null) pCards.AddRange(playerDeck.Cards);
@@ -354,6 +365,26 @@ public class BattleManager : MonoBehaviour
         if (a == upsetLow && b == upsetHigh) return 1;
         if (b == upsetLow && a == upsetHigh) return -1;
         return a > b ? 1 : -1;
+    }
+
+    // 현재 스테이지의 보드게임 프리팹을 생성해 특정 위치 → gameHolder로 이동(이전 것은 제거).
+    void SpawnBoardGame()
+    {
+        if (_boardGameInstance != null) Destroy(_boardGameInstance);
+        _boardGameInstance = null;
+
+        if (gameHolder == null || _activeStage == null || _activeStage.BoardGamePrefab == null) return;
+
+        _boardGameInstance = Instantiate(_activeStage.BoardGamePrefab);
+        Transform t = _boardGameInstance.transform;
+        t.SetParent(gameHolder, false);        // 프리팹 로컬 트랜스폼 = 최종 위치
+        Vector3 home = t.localPosition;
+
+        if (boardSpawnPoint != null)
+        {
+            t.position = boardSpawnPoint.position;                          // 특정 위치에서 시작
+            t.DOLocalMove(home, boardMoveDuration).SetEase(boardMoveEase);  // holder로 이동
+        }
     }
 
     void GrantReward()
