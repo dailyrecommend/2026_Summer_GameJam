@@ -88,9 +88,15 @@ public class CardInfoPanel : MonoBehaviour
         if (_visible) FollowMouse();
     }
 
-    public void Show(CardData card)
+    public void Show(CardData card, bool faceDown)
     {
         if (card == null) { Hide(); return; }
+
+        if (faceDown)
+        {
+            ShowContent("???", "???", "???", "???");
+            return;
+        }
         ShowContent(card.DisplayName, card.IsSpecial ? "특수" : "일반", $"숫자 {card.Number}", card.Description);
     }
 

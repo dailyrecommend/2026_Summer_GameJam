@@ -89,16 +89,6 @@ public static class SpecialCardEffects
             case SpecialEffect.Bang:
             {
                 string who = isPlayer ? "플레이어" : "적";
-                // 발동 조건: 상대가 이번 판에 고유(특수) 카드를 냄.
-                bool opponentPlayedSpecial = isPlayer ? result.EnemyCardIsSpecial : result.PlayerCardIsSpecial;
-
-                if (!opponentPlayedSpecial)
-                {
-                    if (isPlayer) result.PlayerNumber = 4; else result.EnemyNumber = 4;
-                    Debug.Log($"[특수] Bang!({who}) → 상대가 고유카드를 안 냄: 발동 안 함, 숫자 4로 간주");
-                    break;
-                }
-
                 BattleField targetField = isPlayer ? result.EnemyField : result.PlayerField;
                 CardPile targetPile = isPlayer ? result.EnemyPile : result.PlayerPile;
 
@@ -113,7 +103,7 @@ public static class SpecialCardEffects
                 if (candidates.Count > 0)
                 {
                     FieldCard picked = candidates[Random.Range(0, candidates.Count)];
-                    Debug.Log($"[특수] Bang!({who}) → 발동(상대 고유카드 냄): '{picked.Data.DisplayName}' 파괴, 승리");
+                    Debug.Log($"[특수] Bang!({who}) → 상대 필드 고유카드 '{picked.Data.DisplayName}' 파괴, 승리");
                     targetField.DiscardCard(picked, targetPile);
                     result.ForceOutcome = true;
                     result.ForcedCmp = isPlayer ? 1 : -1;
@@ -121,7 +111,7 @@ public static class SpecialCardEffects
                 else
                 {
                     if (isPlayer) result.PlayerNumber = 4; else result.EnemyNumber = 4;
-                    Debug.Log($"[특수] Bang!({who}) → 발동했지만 상대 필드에 파괴할 고유카드 없음: 숫자 4로 간주");
+                    Debug.Log($"[특수] Bang!({who}) → 상대 필드에 고유카드 없음: 숫자 4로 간주");
                 }
                 break;
             }

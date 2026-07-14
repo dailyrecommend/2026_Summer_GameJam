@@ -20,8 +20,8 @@ public class BattleFieldInteractor : MonoBehaviour
 
     /// <summary>카드를 승부에 올렸을 때(같은 카드 재클릭).</summary>
     public event Action<FieldCard> CardCommitted;
-    /// <summary>카드에 마우스를 올렸을 때(툴팁 표시용).</summary>
-    public event Action<CardData> CardHovered;
+    /// <summary>카드에 마우스를 올렸을 때(툴팁 표시용). 두 번째 인자는 카드가 뒷면인지.</summary>
+    public event Action<CardData, bool> CardHovered;
     /// <summary>카드에서 마우스가 벗어났을 때(툴팁 숨김용).</summary>
     public event Action CardUnhovered;
 
@@ -59,17 +59,17 @@ public class BattleFieldInteractor : MonoBehaviour
         {
             if (_hovered != null) _hovered.SetHovered(false);
             _hovered = hit;
-            if (_hovered != null)
-            {
-                _hovered.SetHovered(true);
-                CardHovered?.Invoke(_hovered.Data);
-            }
+            if (_hovered != null) _hovered.SetHovered(true);
             else CardUnhovered?.Invoke();
         }
 
-        // 호버 중이면 커서 위치 전달 → 커서 쪽으로 기울기.
-        if (_hovered != null && hit == _hovered)
+        if (_hovered != null)
+        {
+            // 매 프레임 갱신 → 딜 중 뒷면→앞면 전환도 툴팁에 바로 반영됨.
+            CardHovered?.Invoke(_hovered.Data, _hovered.IsFaceDown);
+            // 커서 위치 전달 → 커서 쪽으로 기울기.
             _hovered.SetHoverPoint(hitPoint);
+        }
 
         // 3) 클릭 처리 (호버 전용이면 생략)
         if (_locked || hoverOnly) return;

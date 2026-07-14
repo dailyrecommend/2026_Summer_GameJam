@@ -50,8 +50,11 @@ public class FieldCard : MonoBehaviour
     Vector2 _tilt;
     Vector2 _halfExtent = new Vector2(0.5f, 0.5f);
 
+    bool _faceDown;
+
     public CardData Data => _data;
     public bool IsRaised => _raised;
+    public bool IsFaceDown => _faceDown;
 
     void Awake()
     {
@@ -91,12 +94,14 @@ public class FieldCard : MonoBehaviour
     {
         _flipTween?.Kill();
         _flipAngle = 180f;
+        _faceDown = true;
     }
 
     /// <summary>앞면으로 뒤집기(애니메이션). 각도만 갱신, 합성은 LateUpdate.</summary>
     public void FlipUp()
     {
         _flipTween?.Kill();
+        _faceDown = false;
         _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, 0f, flipDuration).SetEase(flipEase);
     }
 
