@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Davinci_DavinciJoker
   m_EditorClassIdentifier: Assembly-CSharp::SpecialCardData
   id: DDJ
-  displayName: Davinci Joker
-  description: It's the Davinci Joker, randomly changing into a number from 0 to
-    13.
+  displayName: "\uB2E4\uBE48\uCE58 \uC870\uCEE4"
+  description: "\uB2E4\uBE48\uCE58 \uC870\uCEE4\uC785\uB2C8\uB2E4, 0~13\uC758 \uC22B\uC790\uB85C
+    \uBB34\uC791\uC704\uB85C \uBCC0\uD654\uD569\uB2C8\uB2E4. "
   texture: {fileID: 2800000, guid: 612fca038d7863645967db6cc21798a3, type: 3}
   number: 7
   effect: 2

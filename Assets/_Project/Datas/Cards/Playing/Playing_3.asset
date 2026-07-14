@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
   id: P3
   displayName: 3
-  description: It's Three.
+  description: "3 \uC785\uB2C8\uB2E4."
   texture: {fileID: 2800000, guid: 9faae2886984bc24988f49f06bbd4ad4, type: 3}
   number: 3

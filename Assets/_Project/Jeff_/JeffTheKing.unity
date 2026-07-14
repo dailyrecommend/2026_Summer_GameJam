@@ -497,7 +497,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uAFF9 \uB6D5 "
+  m_text: "\uCE74\uB4DC\uB97C \uB4DC\uB85C\uC6B0 \uD569\uB2C8\uB2E4."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc89304a8ac170c4daf4b6c7e0a14435, type: 2}
   m_sharedMaterial: {fileID: 786396343914760511, guid: dc89304a8ac170c4daf4b6c7e0a14435, type: 2}
@@ -506,8 +506,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

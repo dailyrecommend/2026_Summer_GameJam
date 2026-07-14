@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NormalCardData
   id: D1
   displayName: 1
-  description: It's One, but it wins against Six.
+  description: "\uAC00\uC7A5 \uC791\uC740 \uC218 1, \uD558\uC9C0\uB9CC 6\uC744 \uC774\uAE41\uB2C8\uB2E4. "
   texture: {fileID: 2800000, guid: 19d2bf7c95b33704c9b6df4ed25c257c, type: 3}
   number: 1
