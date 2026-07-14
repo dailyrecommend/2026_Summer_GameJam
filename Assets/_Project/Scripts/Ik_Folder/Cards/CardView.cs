@@ -49,9 +49,40 @@ public class CardView : MonoBehaviour
     bool _flipped;
     float _flipAngle;
 
+    Vector2 _tiltTarget;                       // (pitch, yaw) 목표
+    Vector2 _tilt;                             // 현재(부드럽게)
+    Vector2 _halfExtent = new Vector2(0.5f, 0.5f); // 카드 로컬 반너비/반높이
+
     void Awake()
     {
         _baseRot = transform.localRotation;
+        if (targetRenderer != null)
+        {
+            Vector3 ext = targetRenderer.localBounds.extents;
+            _halfExtent = new Vector2(Mathf.Max(0.0001f, ext.x), Mathf.Max(0.0001f, ext.y));
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (!_hovered) _tiltTarget = Vector2.zero;
+        float t = 1f - Mathf.Exp(-tiltSmooth * Time.deltaTime);
+        _tilt = Vector2.Lerp(_tilt, _tiltTarget, t);
+
+        // 기준회전 × 호버기울기 × 플립 을 매 프레임 합성.
+        transform.localRotation = _baseRot
+            * Quaternion.Euler(_tilt.x, _tilt.y, 0f)
+            * Quaternion.AngleAxis(_flipAngle, flipAxis);
+    }
+
+    /// <summary>커서가 카드에 닿은 월드 지점 → 중심에서의 거리로 기울기 목표를 정한다.</summary>
+    public void SetHoverPoint(Vector3 worldPoint)
+    {
+        if (!_hovered) return;
+        Vector3 local = transform.InverseTransformPoint(worldPoint);
+        float nx = Mathf.Clamp(local.x / _halfExtent.x, -1f, 1f);
+        float ny = Mathf.Clamp(local.y / _halfExtent.y, -1f, 1f);
+        _tiltTarget = new Vector2(-ny * tiltMaxAngle, nx * tiltMaxAngle); // (pitch, yaw)
     }
 
     public CardData Data => _data;
@@ -109,11 +140,8 @@ public class CardView : MonoBehaviour
         float to = _flipped ? 180f : 0f;
 
         _flipTween?.Kill();
-        _flipTween = Tw.To(() => _flipAngle, v =>
-        {
-            _flipAngle = v;
-            transform.localRotation = _baseRot * Quaternion.AngleAxis(v, flipAxis);
-        }, to, flipDuration).SetEase(flipEase);
+        // 각도만 갱신. 실제 회전 합성은 LateUpdate가 한다(기울기와 충돌 방지).
+        _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, to, flipDuration).SetEase(flipEase);
     }
 
     public bool IsFlipped => _flipped;

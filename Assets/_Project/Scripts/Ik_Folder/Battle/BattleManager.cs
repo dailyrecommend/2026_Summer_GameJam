@@ -19,9 +19,9 @@ public class BattleManager : MonoBehaviour
     [SerializeField] ScreenFlowController screenFlow;
 
     [Header("보드게임 표시")]
-    [Tooltip("스테이지의 Board Game Prefab이 최종적으로 놓일 부모")]
+    [Tooltip("스테이지의 Board Game Prefab이 최종적으로 놓일 부모(앵커). 이 트랜스폼 자체는 절대 움직이지 않음")]
     [SerializeField] Transform gameHolder;
-    [Tooltip("보드가 이 위치에서 시작해 holder로 이동(비우면 즉시 holder에 배치)")]
+    [Tooltip("보드가 이 위치에서 생성되어 holder로 이동(비우면 즉시 holder에 배치). 이 트랜스폼도 움직이지 않음 — 생성된 보드 오브젝트만 이동함")]
     [SerializeField] Transform boardSpawnPoint;
     [SerializeField] float boardMoveDuration = 0.5f;
     [SerializeField] TweenKit.Ease boardMoveEase = TweenKit.Ease.OutCubic;
@@ -113,7 +113,7 @@ public class BattleManager : MonoBehaviour
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
 
-        SpawnBoardGame();
+        float boardDelay = SpawnBoardGame();
 
         List<CardData> pCards = new List<CardData>();
         if (playerDeck != null) pCards.AddRange(playerDeck.Cards);
@@ -142,7 +142,9 @@ public class BattleManager : MonoBehaviour
         playerField.Clear();
         enemyField.Clear();
 
-        StartRound();
+        // 보드가 앵커로 다 이동한 뒤에 카드 드로우 시작.
+        if (boardDelay > 0f) Tw.Delay(boardDelay, StartRound);
+        else StartRound();
     }
 
     void StartRound()
@@ -367,24 +369,41 @@ public class BattleManager : MonoBehaviour
         return a > b ? 1 : -1;
     }
 
-    // 현재 스테이지의 보드게임 프리팹을 생성해 특정 위치 → gameHolder로 이동(이전 것은 제거).
-    void SpawnBoardGame()
+    // 현재 스테이지의 보드게임 프리팹을 생성해 spawnPoint → gameHolder로 이동(이전 것은 제거).
+    // 움직이는 건 '생성된 보드 오브젝트'뿐이다. gameHolder/boardSpawnPoint 자체는 절대 옮기지 않는다.
+    // 반환값: 이동 애니메이션이 끝날 때까지 걸리는 시간(슬라이드가 없으면 0) — 카드 드로우 시작을 늦추는 데 사용.
+    float SpawnBoardGame()
     {
         if (_boardGameInstance != null) Destroy(_boardGameInstance);
         _boardGameInstance = null;
 
-        if (gameHolder == null || _activeStage == null || _activeStage.BoardGamePrefab == null) return;
+        if (gameHolder == null) { Debug.LogWarning("[Battle] Game Holder가 연결되지 않았습니다."); return 0f; }
+        if (_activeStage == null) { Debug.LogWarning("[Battle] 활성 스테이지(_activeStage)가 없습니다 — StartBattle(stage) 호출 확인."); return 0f; }
+        if (_activeStage.BoardGamePrefab == null)
+        {
+            Debug.LogWarning($"[Battle] 스테이지 '{_activeStage.DisplayName}'에 Board Game Prefab이 비어있습니다.");
+            return 0f;
+        }
+
+        // 홀더의 '위치/회전 값'만 미리 복사해 목표로 삼는다. 이후 gameHolder는 코드에서 전혀 참조·수정하지 않음.
+        Vector3 holderPos = gameHolder.position;
+        Quaternion holderRot = gameHolder.rotation;
 
         _boardGameInstance = Instantiate(_activeStage.BoardGamePrefab);
         Transform t = _boardGameInstance.transform;
-        t.SetParent(gameHolder, false);        // 프리팹 로컬 트랜스폼 = 최종 위치
-        Vector3 home = t.localPosition;
+        // gameHolder의 자식으로 만들지 않는다(자식/부모 조작이 홀더에 영향 줄 여지를 원천 차단).
+        t.SetParent(gameHolder, true); // 부모 지정만, 월드 트랜스폼 유지 → 홀더는 값이 안 바뀜
+        t.rotation = holderRot;
 
         if (boardSpawnPoint != null)
         {
-            t.position = boardSpawnPoint.position;                          // 특정 위치에서 시작
-            t.DOLocalMove(home, boardMoveDuration).SetEase(boardMoveEase);  // holder로 이동
+            t.position = boardSpawnPoint.position;                           // 스폰 지점에서 시작
+            t.DOMove(holderPos, boardMoveDuration).SetEase(boardMoveEase);   // 복사해둔 홀더 위치로(월드) 이동
+            return boardMoveDuration;
         }
+
+        t.position = holderPos;
+        return 0f;
     }
 
     void GrantReward()

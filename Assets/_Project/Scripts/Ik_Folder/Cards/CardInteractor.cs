@@ -36,9 +36,13 @@ public class CardInteractor : MonoBehaviour
 
         // 1) 커서 아래 카드 찾기
         CardView hit = null;
+        Vector3 hitPoint = default;
         Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
         if (Physics.Raycast(ray, out RaycastHit info, Mathf.Infinity, cardMask))
+        {
             hit = info.collider.GetComponentInParent<CardView>();
+            hitPoint = info.point;
+        }
 
         // 2) 호버 상태 갱신
         if (hit != _hovered)
@@ -52,6 +56,10 @@ public class CardInteractor : MonoBehaviour
             }
             else CardUnhovered?.Invoke();
         }
+
+        // 호버 중이면 커서 위치를 넘겨 카드가 커서 쪽으로 기울게.
+        if (_hovered != null && hit == _hovered)
+            _hovered.SetHoverPoint(hitPoint);
 
         // 3) 클릭 처리
         if (Mouse.current.leftButton.wasPressedThisFrame)

@@ -68,6 +68,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BangBox
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 8cc214c1c8c44794c8916c4eda1599c7, type: 3}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

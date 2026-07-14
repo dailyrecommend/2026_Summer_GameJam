@@ -29,6 +29,10 @@ public class FieldCard : MonoBehaviour
     [SerializeField] float flipDuration = 0.25f;
     [SerializeField] Ease flipEase = Ease.OutQuad;
 
+    [Header("호버 기울기 (커서 쪽으로 기움)")]
+    [SerializeField] float tiltMaxAngle = 12f;
+    [SerializeField] float tiltSmooth = 14f;
+
     CardData _data;
     MaterialPropertyBlock _mpb;
     Tween _moveTween;
@@ -42,6 +46,10 @@ public class FieldCard : MonoBehaviour
     bool _raised;
     bool _hovered;
 
+    Vector2 _tiltTarget;
+    Vector2 _tilt;
+    Vector2 _halfExtent = new Vector2(0.5f, 0.5f);
+
     public CardData Data => _data;
     public bool IsRaised => _raised;
 
@@ -49,25 +57,47 @@ public class FieldCard : MonoBehaviour
     {
         _baseScale = transform.localScale;
         _baseRot = transform.localRotation;
+        if (targetRenderer != null)
+        {
+            Vector3 ext = targetRenderer.localBounds.extents;
+            _halfExtent = new Vector2(Mathf.Max(0.0001f, ext.x), Mathf.Max(0.0001f, ext.y));
+        }
     }
 
-    /// <summary>즉시 뒷면 상태로.</summary>
+    void LateUpdate()
+    {
+        if (!_hovered) _tiltTarget = Vector2.zero;
+        float t = 1f - Mathf.Exp(-tiltSmooth * Time.deltaTime);
+        _tilt = Vector2.Lerp(_tilt, _tiltTarget, t);
+
+        // 기준회전 × 호버기울기 × 플립 을 매 프레임 합성.
+        transform.localRotation = _baseRot
+            * Quaternion.Euler(_tilt.x, _tilt.y, 0f)
+            * Quaternion.AngleAxis(_flipAngle, flipAxis);
+    }
+
+    /// <summary>커서가 카드에 닿은 월드 지점 → 중심 거리로 기울기 목표 설정.</summary>
+    public void SetHoverPoint(Vector3 worldPoint)
+    {
+        if (!_hovered) return;
+        Vector3 local = transform.InverseTransformPoint(worldPoint);
+        float nx = Mathf.Clamp(local.x / _halfExtent.x, -1f, 1f);
+        float ny = Mathf.Clamp(local.y / _halfExtent.y, -1f, 1f);
+        _tiltTarget = new Vector2(-ny * tiltMaxAngle, nx * tiltMaxAngle);
+    }
+
+    /// <summary>즉시 뒷면 상태로. (실제 회전 합성은 LateUpdate)</summary>
     public void SetFaceDown()
     {
         _flipTween?.Kill();
         _flipAngle = 180f;
-        transform.localRotation = _baseRot * Quaternion.AngleAxis(_flipAngle, flipAxis);
     }
 
-    /// <summary>앞면으로 뒤집기(애니메이션).</summary>
+    /// <summary>앞면으로 뒤집기(애니메이션). 각도만 갱신, 합성은 LateUpdate.</summary>
     public void FlipUp()
     {
         _flipTween?.Kill();
-        _flipTween = Tw.To(() => _flipAngle, v =>
-        {
-            _flipAngle = v;
-            transform.localRotation = _baseRot * Quaternion.AngleAxis(v, flipAxis);
-        }, 0f, flipDuration).SetEase(flipEase);
+        _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, 0f, flipDuration).SetEase(flipEase);
     }
 
     public void Bind(CardData data)

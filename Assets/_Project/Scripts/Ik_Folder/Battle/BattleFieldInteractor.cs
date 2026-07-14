@@ -43,11 +43,15 @@ public class BattleFieldInteractor : MonoBehaviour
 
         // 1) 커서 아래 필드 카드 찾기
         FieldCard hit = null;
+        Vector3 hitPoint = default;
         if (!_locked)
         {
             Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit info, Mathf.Infinity, fieldMask))
+            {
                 hit = info.collider.GetComponentInParent<FieldCard>();
+                hitPoint = info.point;
+            }
         }
 
         // 2) 호버 갱신
@@ -62,6 +66,10 @@ public class BattleFieldInteractor : MonoBehaviour
             }
             else CardUnhovered?.Invoke();
         }
+
+        // 호버 중이면 커서 위치 전달 → 커서 쪽으로 기울기.
+        if (_hovered != null && hit == _hovered)
+            _hovered.SetHoverPoint(hitPoint);
 
         // 3) 클릭 처리 (호버 전용이면 생략)
         if (_locked || hoverOnly) return;

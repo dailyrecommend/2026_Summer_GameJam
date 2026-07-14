@@ -26,13 +26,13 @@ Material:
     m_Ints: []
     m_Floats:
     - _Aberration: 0.0005
-    - _Curvature: 0.15
-    - _PixelResolution: 720
+    - _Curvature: 0.1
+    - _PixelResolution: 400
     - _PixelSize: 3
-    - _ScanlineCount: 160
-    - _ScanlineIntensity: 0.3
+    - _ScanlineCount: 200
+    - _ScanlineIntensity: 0.2
     - _TintStrength: 0.3
-    - _Vignette: 0.6
+    - _Vignette: 1
     m_Colors:
     - _TintColor: {r: 0, g: 0.41509432, b: 0.036817107, a: 1}
   m_BuildTextureStacks: []
