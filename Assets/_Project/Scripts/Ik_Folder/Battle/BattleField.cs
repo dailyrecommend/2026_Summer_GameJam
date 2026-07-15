@@ -231,18 +231,19 @@ public class BattleField : MonoBehaviour
             return;
         }
 
-        // 다빈치 코드 패시브 등으로 뒷면 상태였던 카드는 승부에 나오는 순간 공개.
-        if (card.IsFaceDown) card.FlipUp();
+        // 다빈치 코드 패시브 등으로 뒷면 상태였던 카드는 뒷면인 채로 승부처까지 이동한 뒤, 도착해서 공개.
+        bool wasFaceDown = card.IsFaceDown;
 
         if (showdownSlot == null)
         {
             Debug.LogWarning($"[BattleField] Showdown Slot이 연결되지 않았습니다 ({name})");
+            if (wasFaceDown) card.FlipUp();
         }
         else
         {
             Transform parent = cardParent != null ? cardParent : transform;
             Vector3 local = parent.InverseTransformPoint(showdownSlot.position);
-            card.PlaceAt(local, commitDuration, commitEase);
+            card.PlaceAt(local, commitDuration, commitEase, 0f, wasFaceDown ? (System.Action)(() => card.FlipUp()) : null);
         }
         Arrange();
     }

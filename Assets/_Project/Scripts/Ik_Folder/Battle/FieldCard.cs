@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 using TweenKit;
 
 /// <summary>
@@ -42,6 +43,17 @@ public class FieldCard : MonoBehaviour
     [Tooltip("VFX 프리팹에 자체 파괴 로직이 없을 때를 대비한 안전 파괴 시간(0 이하면 자동 파괴 안 함)")]
     [SerializeField] float vfxAutoDestroy = 3f;
 
+    [Header("승부 연출 - 특수카드 판정 숫자 공개")]
+    [Tooltip("확정된 판정 숫자를 보여줄 텍스트(카드의 자식, TextMeshPro). 비우면 연출 없이 대기만 함")]
+    [SerializeField] TextMeshPro numberRevealText;
+    [Tooltip("숫자가 팝인되는 시간")]
+    [SerializeField] float numberPopDuration = 0.2f;
+    [SerializeField] Ease numberPopEase = Ease.OutBack;
+    [Tooltip("숫자가 나타난 뒤 승부 진행까지의 대기 시간")]
+    [SerializeField] float numberToShowdownDelay = 1f;
+    [Tooltip("승부 진행 시 숫자가 사라지는 시간")]
+    [SerializeField] float numberFadeOutDuration = 0.2f;
+
     [Header("승부 연출 - 승리 카드 (들어올림 + 3축 회전 펀치)")]
     [SerializeField] float winLiftHeight = 0.15f;
     [SerializeField] float winLiftDuration = 0.2f;
@@ -60,6 +72,7 @@ public class FieldCard : MonoBehaviour
     Tween _scaleTween;
     Tween _flipTween;
     Tween _punchRotTween;
+    Tween _numberPopTween;
 
     Vector3 _homePos;
     Vector3 _baseScale = Vector3.one;
@@ -88,6 +101,7 @@ public class FieldCard : MonoBehaviour
             Vector3 ext = targetRenderer.localBounds.extents;
             _halfExtent = new Vector2(Mathf.Max(0.0001f, ext.x), Mathf.Max(0.0001f, ext.y));
         }
+        if (numberRevealText != null) numberRevealText.gameObject.SetActive(false);
     }
 
     void LateUpdate()
@@ -267,6 +281,39 @@ public class FieldCard : MonoBehaviour
         Transform origin = vfxSpawnPoint != null ? vfxSpawnPoint : transform;
         GameObject vfx = Instantiate(prefab, origin.position, origin.rotation);
         if (vfxAutoDestroy > 0f) Destroy(vfx, vfxAutoDestroy);
+    }
+
+    /// <summary>
+    /// 특수카드 능력이 '숫자로 판정'되는 결과로 이어질 때(다빈치 조커의 랜덤 숫자, 혹은 드로우2/Bang!/
+    /// 맥주 등이 조건 불충족으로 고정 숫자로 간주되는 경우) 확정된 판정 숫자를 카드 위에 표시.
+    /// 숫자가 나타난 뒤 numberToShowdownDelay만큼 지나면 onShowdown(승부 진행)을 호출한다.
+    /// </summary>
+    public void PlayNumberRevealEffect(int number, System.Action onShowdown)
+    {
+        if (numberRevealText != null)
+        {
+            numberRevealText.text = number.ToString();
+            numberRevealText.gameObject.SetActive(true);
+            numberRevealText.transform.localScale = Vector3.zero;
+            _numberPopTween?.Kill();
+            _numberPopTween = numberRevealText.transform.DOScale(Vector3.one, numberPopDuration).SetEase(numberPopEase);
+            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.SpecialActivate);
+        }
+
+        Tw.Delay(numberToShowdownDelay, () =>
+        {
+            onShowdown?.Invoke();
+
+            if (numberRevealText != null)
+            {
+                _numberPopTween?.Kill();
+                _numberPopTween = numberRevealText.transform.DOScale(Vector3.zero, numberFadeOutDuration);
+                Tw.Delay(numberFadeOutDuration, () =>
+                {
+                    if (numberRevealText != null) numberRevealText.gameObject.SetActive(false);
+                });
+            }
+        });
     }
 
     /// <summary>승리 카드 연출: 살짝 들어올려진 뒤 회전 펀치(발라트로 느낌). 완료 시 onDone 호출.</summary>

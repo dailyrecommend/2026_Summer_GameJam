@@ -435,34 +435,79 @@ public class BattleManager : MonoBehaviour
         _enemyNoWinNext = false;
 
         // 1) 카드는 이미 승부처(승부 슬롯)로 이동해 있음(OnPlayerCommit의 CommitCard에서 처리).
-        // 2) 특수카드를 낸 쪽은 고유 심볼이 떠오르는 연출을 하고, 심볼이 뜬 지 1초 뒤에
-        //    실제 능력(OnShowdown)이 적용된다 → 양쪽 다 적용 완료되면 3단계로.
+        // 2) 특수카드를 낸 쪽은 고유 VFX 연출을 하고, VFX가 재생된 지 1초 뒤에 실제 능력(OnShowdown)이
+        //    적용된다. 그 결과 '숫자로 판정'되는 경우(다빈치 조커의 랜덤 숫자, 또는 드로우2/Bang!/맥주 등이
+        //    조건 불충족으로 고정 숫자로 간주되는 폴백)에는 확정된 판정 숫자를 곧바로 보여준 뒤 다시 1초를
+        //    더 기다렸다가 승부를 진행한다(강제무승부/강제승패/교환으로 끝나는 경우는 숫자 판정이 아니므로
+        //    표시하지 않음) → 양쪽 다 적용 완료되면 3단계로.
+        //    플레잉 조커(ForceDraw)는 우선도가 가장 낮아서, 상대도 다른 특수카드를 냈다면 그 효과가
+        //    완전히 적용된 뒤에야 마지막으로 적용된다(상대가 없거나 상대도 ForceDraw면 그냥 각자 바로 적용).
         if (playerSpecialNow || enemySpecialNow)
         {
-            int pending = (playerSpecialNow ? 1 : 0) + (enemySpecialNow ? 1 : 0);
-            System.Action onOneApplied = () =>
+            SpecialCardData psd = playerSpecialNow ? (SpecialCardData)_playerChosen.Data : null;
+            SpecialCardData esd = enemySpecialNow ? (SpecialCardData)_enemyChosen.Data : null;
+
+            bool playerIsForceDraw = psd != null && psd.Effect == SpecialEffect.ForceDraw;
+            bool enemyIsForceDraw = esd != null && esd.Effect == SpecialEffect.ForceDraw;
+            bool playerDefersToEnemy = playerIsForceDraw && enemySpecialNow && !enemyIsForceDraw;
+            bool enemyDefersToPlayer = enemyIsForceDraw && playerSpecialNow && !playerIsForceDraw;
+
+            int remaining = (playerSpecialNow ? 1 : 0) + (enemySpecialNow ? 1 : 0);
+            void OnOneFullyApplied()
             {
-                pending--;
-                if (pending > 0) return;
+                remaining--;
+                if (remaining > 0) return;
                 ResolveAfterSpecials(sr);
-            };
+            }
+
+            // 이 카드의 효과로 강제무승부/강제승패/교환이 '새로' 정해졌는지(=숫자 판정이 아님)를 판단해,
+            // 아니라면(=숫자가 바뀌었거나 다빈치 조커처럼 매번 새로 정해지는 경우) 숫자 공개 연출을 끼워 넣는다.
+            void ApplyPlayer(System.Action onDone)
+            {
+                int before = sr.PlayerNumber;
+                bool forcedBefore = sr.ForceDraw || sr.ForceOutcome || sr.SwapCards;
+                psd.OnShowdown(sr, true);
+                bool becameForced = !forcedBefore && (sr.ForceDraw || sr.ForceOutcome || sr.SwapCards);
+                bool showsNumber = !becameForced && (psd.Effect == SpecialEffect.RandomNumber || sr.PlayerNumber != before);
+                if (showsNumber)
+                    _playerChosen.PlayNumberRevealEffect(sr.PlayerNumber, onDone);
+                else
+                    onDone();
+            }
+
+            void ApplyEnemy(System.Action onDone)
+            {
+                int before = sr.EnemyNumber;
+                bool forcedBefore = sr.ForceDraw || sr.ForceOutcome || sr.SwapCards;
+                esd.OnShowdown(sr, false);
+                bool becameForced = !forcedBefore && (sr.ForceDraw || sr.ForceOutcome || sr.SwapCards);
+                bool showsNumber = !becameForced && (esd.Effect == SpecialEffect.RandomNumber || sr.EnemyNumber != before);
+                if (showsNumber)
+                    _enemyChosen.PlayNumberRevealEffect(sr.EnemyNumber, onDone);
+                else
+                    onDone();
+            }
 
             if (playerSpecialNow)
             {
-                SpecialCardData psd = (SpecialCardData)_playerChosen.Data;
                 _playerChosen.PlaySpecialSymbolEffect(psd.VfxPrefab, () =>
                 {
-                    psd.OnShowdown(sr, true);
-                    onOneApplied();
+                    if (playerDefersToEnemy) return; // 상대 효과가 다 끝난 뒤 이어서 적용됨(아래 enemy 콜백 참조).
+                    if (enemyDefersToPlayer)
+                        ApplyPlayer(() => { OnOneFullyApplied(); ApplyEnemy(OnOneFullyApplied); });
+                    else
+                        ApplyPlayer(OnOneFullyApplied);
                 });
             }
             if (enemySpecialNow)
             {
-                SpecialCardData esd = (SpecialCardData)_enemyChosen.Data;
                 _enemyChosen.PlaySpecialSymbolEffect(esd.VfxPrefab, () =>
                 {
-                    esd.OnShowdown(sr, false);
-                    onOneApplied();
+                    if (enemyDefersToPlayer) return;
+                    if (playerDefersToEnemy)
+                        ApplyEnemy(() => { OnOneFullyApplied(); ApplyPlayer(OnOneFullyApplied); });
+                    else
+                        ApplyEnemy(OnOneFullyApplied);
                 });
             }
         }
@@ -483,12 +528,36 @@ public class BattleManager : MonoBehaviour
         if (sr.SwapCards)
         {
             AnimateSwap();
-            Tw.Delay(swapMoveDuration, () => PlayWinnerEffect(cmp, sr));
+            Tw.Delay(swapMoveDuration, () => RevealReverseNumberThenPlayWinner(cmp, sr));
         }
         else
         {
             PlayWinnerEffect(cmp, sr);
         }
+    }
+
+    // 리버스로 교환된 카드는 위치가 교환된 뒤 '2'로 판정됐음을 보여주고, 그 뒤에 승부를 진행한다.
+    void RevealReverseNumberThenPlayWinner(int cmp, ShowdownResult sr)
+    {
+        bool playerIsReverse = _playerChosen != null && _playerChosen.Data is SpecialCardData p && p.Effect == SpecialEffect.Reverse;
+        bool enemyIsReverse = _enemyChosen != null && _enemyChosen.Data is SpecialCardData e && e.Effect == SpecialEffect.Reverse;
+
+        int pending = (playerIsReverse ? 1 : 0) + (enemyIsReverse ? 1 : 0);
+        if (pending == 0)
+        {
+            PlayWinnerEffect(cmp, sr);
+            return;
+        }
+
+        System.Action onOneRevealed = () =>
+        {
+            pending--;
+            if (pending > 0) return;
+            PlayWinnerEffect(cmp, sr);
+        };
+
+        if (playerIsReverse) _playerChosen.PlayNumberRevealEffect(2, onOneRevealed);
+        if (enemyIsReverse) _enemyChosen.PlayNumberRevealEffect(2, onOneRevealed);
     }
 
     // 3) 승부 결과 연출 → 끝나면 최종 정리(점수/버림/다음 라운드).

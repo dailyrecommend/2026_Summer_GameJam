@@ -18,3 +18,4 @@ MonoBehaviour:
   texture: {fileID: 2800000, guid: 612fca038d7863645967db6cc21798a3, type: 3}
   number: 7
   effect: 2
+  vfxPrefab: {fileID: 8653187362930030723, guid: 3ebbab43953035d42bd90d370f2046d8, type: 3}
