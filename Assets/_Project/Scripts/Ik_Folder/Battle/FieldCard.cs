@@ -107,6 +107,16 @@ public class FieldCard : MonoBehaviour
         if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardFlip);
     }
 
+    /// <summary>뒷면으로 뒤집기(애니메이션, 제자리). 완료 시 onComplete 호출 — 뒤집은 뒤 이동시키는 용도.</summary>
+    public void FlipDown(System.Action onComplete = null)
+    {
+        _flipTween?.Kill();
+        _faceDown = true;
+        _flipTween = Tw.To(() => _flipAngle, v => _flipAngle = v, 180f, flipDuration).SetEase(flipEase);
+        if (onComplete != null) _flipTween.OnComplete(onComplete);
+        if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardFlip);
+    }
+
     public void Bind(CardData data)
     {
         _data = data;
@@ -118,6 +128,7 @@ public class FieldCard : MonoBehaviour
             targetRenderer.SetPropertyBlock(_mpb);
         }
     }
+
 
     /// <summary>지정 위치(로컬)로 즉시 스냅. (딜 시작 전 더미 위에 올려둘 때)</summary>
     public void SnapTo(Vector3 localPos)

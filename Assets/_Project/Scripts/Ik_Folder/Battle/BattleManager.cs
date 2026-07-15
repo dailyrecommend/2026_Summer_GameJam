@@ -26,6 +26,23 @@ public class BattleManager : MonoBehaviour
     [SerializeField] float boardMoveDuration = 0.5f;
     [SerializeField] TweenKit.Ease boardMoveEase = TweenKit.Ease.OutCubic;
 
+    [Header("Player/Enemy 이동 (생성 없이 이동만)")]
+    [Tooltip("전투 위치로 이동시킬 Player 오브젝트. 시작 위치를 자동 기억했다가 전투 종료 시 복귀")]
+    [SerializeField] Transform playerMover;
+    [Tooltip("Player가 전투 중 있을 위치(앵커). 이 트랜스폼 자체는 움직이지 않음")]
+    [SerializeField] Transform playerBattleAnchor;
+    [Tooltip("전투 위치로 이동시킬 Enemy 오브젝트")]
+    [SerializeField] Transform enemyMover;
+    [Tooltip("Enemy가 전투 중 있을 위치(앵커)")]
+    [SerializeField] Transform enemyBattleAnchor;
+    [SerializeField] float actorMoveDuration = 0.5f;
+    [SerializeField] TweenKit.Ease actorMoveEase = TweenKit.Ease.OutCubic;
+    [Tooltip("Player/Enemy가 전투 위치에 다 도착한 뒤 카드 드로우 시작까지 대기 시간")]
+    [SerializeField] float postActorMoveDelay = 0.1f;
+
+    Vector3 _playerHomePos, _enemyHomePos;
+    Quaternion _playerHomeRot, _enemyHomeRot;
+
     [Header("오디오")]
     [Tooltip("스테이지에 브금이 지정 안 됐을 때 재생할 기본 전투 브금")]
     [SerializeField] AudioClip defaultBattleBgm;
@@ -92,6 +109,22 @@ public class BattleManager : MonoBehaviour
         StartBattle();
     }
 
+    void Awake()
+    {
+        // Player/Enemy의 '초기 위치'를 씬에 놓인 그대로 기억해둔다(전투 종료 시 여기로 복귀).
+        if (playerMover != null) { _playerHomePos = playerMover.position; _playerHomeRot = playerMover.rotation; }
+        if (enemyMover != null) { _enemyHomePos = enemyMover.position; _enemyHomeRot = enemyMover.rotation; }
+
+        // 전투가 시작되기 전까지는 꺼둔다.
+        SetActorsActive(false);
+    }
+
+    void SetActorsActive(bool active)
+    {
+        if (playerMover != null) playerMover.gameObject.SetActive(active);
+        if (enemyMover != null) enemyMover.gameObject.SetActive(active);
+    }
+
     void OnEnable()
     {
         if (playerInteractor != null) playerInteractor.CardCommitted += OnPlayerCommit;
@@ -128,9 +161,14 @@ public class BattleManager : MonoBehaviour
 
         float boardDelay = SpawnBoardGame();
 
+        // 스테이지마다 적 카드 더미 생김새가 달라서 뽑을/버린 더미 텍스쳐 교체. (플레이어 더미는 고정, 적용 안 함)
+        Texture pileTex = _activeStage != null ? _activeStage.CardBackTexture : null;
+        enemyField.SetPileTexture(pileTex);
+
         List<CardData> pCards = new List<CardData>();
         if (playerDeck != null) pCards.AddRange(playerDeck.Cards);
         _playerPile.Init(pCards);
+        playerField.BindPileVisuals(pCards.Count);
 
         // 적 덱 우선순위: 스테이지 데이터 > 인스펙터 enemyDeck > 플레이어 덱 복사
         List<CardData> eCards;
@@ -151,13 +189,50 @@ public class BattleManager : MonoBehaviour
             Debug.Log($"[Battle] 적 덱 = 플레이어 덱 복사 — 이유: {why}");
         }
         _enemyPile.Init(eCards);
+        enemyField.BindPileVisuals(eCards.Count);
 
         playerField.Clear();
         enemyField.Clear();
 
-        // 보드가 앵커로 다 이동한 뒤에 카드 드로우 시작.
-        if (boardDelay > 0f) Tw.Delay(boardDelay, StartRound);
-        else StartRound();
+        // 보드가 앵커로 다 이동한 '뒤에' Player/Enemy가 전투 위치로 이동 → 그 뒤에 카드 드로우 시작.
+        if (boardDelay > 0f) Tw.Delay(boardDelay, MoveActorsInThenStartRound);
+        else MoveActorsInThenStartRound();
+    }
+
+    void MoveActorsInThenStartRound()
+    {
+        SetActorsActive(true); // 전투 시작 → 이제부터 보임
+        float actorDelay = MoveActorsToAnchors();
+        Tw.Delay(actorDelay + postActorMoveDelay, StartRound);
+    }
+
+    // 한 오브젝트를 목표 위치/회전으로 이동. 움직였으면 actorMoveDuration을, 대상 없으면 0을 반환.
+    float MoveActor(Transform mover, Vector3 pos, Quaternion rot)
+    {
+        if (mover == null) return 0f;
+        mover.DOMove(pos, actorMoveDuration).SetEase(actorMoveEase);
+        mover.DORotateQuaternion(rot, actorMoveDuration).SetEase(actorMoveEase);
+        return actorMoveDuration;
+    }
+
+    // Player/Enemy를 각자의 전투 위치(앵커)로 이동.
+    float MoveActorsToAnchors()
+    {
+        float t = 0f;
+        if (playerMover != null && playerBattleAnchor != null)
+            t = Mathf.Max(t, MoveActor(playerMover, playerBattleAnchor.position, playerBattleAnchor.rotation));
+        if (enemyMover != null && enemyBattleAnchor != null)
+            t = Mathf.Max(t, MoveActor(enemyMover, enemyBattleAnchor.position, enemyBattleAnchor.rotation));
+        return t;
+    }
+
+    // Player/Enemy를 전투 시작 전 기억해둔 초기 위치로 복귀.
+    float MoveActorsHome()
+    {
+        float t = 0f;
+        if (playerMover != null) t = Mathf.Max(t, MoveActor(playerMover, _playerHomePos, _playerHomeRot));
+        if (enemyMover != null) t = Mathf.Max(t, MoveActor(enemyMover, _enemyHomePos, _enemyHomeRot));
+        return t;
     }
 
     void StartRound()
@@ -170,12 +245,12 @@ public class BattleManager : MonoBehaviour
         float wait = 0f;
         if (NeedReshuffle(playerField, _playerPile))
         {
-            playerField.PlayReshuffle(_playerPile.DiscardCards);
+            playerField.PlayReshuffle(_playerPile);
             wait = Mathf.Max(wait, playerField.ReshuffleTime(_playerPile.DiscardCount));
         }
         if (NeedReshuffle(enemyField, _enemyPile))
         {
-            enemyField.PlayReshuffle(_enemyPile.DiscardCards);
+            enemyField.PlayReshuffle(_enemyPile);
             wait = Mathf.Max(wait, enemyField.ReshuffleTime(_enemyPile.DiscardCount));
         }
 
@@ -225,7 +300,7 @@ public class BattleManager : MonoBehaviour
             CardData c = pile.Draw();
             if (c != null) drawn.Add(c);
         }
-        if (drawn.Count > 0) field.AddCards(drawn, onRevealed);
+        if (drawn.Count > 0) field.AddCards(drawn, onRevealed, pile.DrawCount);
         else onRevealed?.Invoke();
     }
 
@@ -387,21 +462,33 @@ public class BattleManager : MonoBehaviour
         bool firstClear = playerWon && progress != null && _activeStageIndex >= 0
                           && progress.MarkCleared(_activeStageIndex);
 
-        // 결과를 잠깐 보여준 뒤 스테이지로 복귀 → 이동이 멈추면 보상 지급.
+        // 결과를 잠깐 보여준 뒤 → Player/Enemy는 초기 위치로, 보드는 홀더→스포너로 복귀
+        // → 둘 다 끝나면 스테이지로 복귀 → 이동이 멈추면 보상 지급.
         Tw.Delay(endReturnDelay, () =>
         {
-            if (screenFlow != null)
+            float actorDelay = MoveActorsHome();
+            float boardDelay = ReturnBoardToSpawner();
+            float wait = Mathf.Max(actorDelay, boardDelay);
+
+            System.Action goToStage = () =>
             {
-                screenFlow.GoTo(stageScreenIndex, () =>
+                SetActorsActive(false); // 초기 위치 복귀 완료 → 다시 숨김
+                if (screenFlow != null)
                 {
-                    screenFlow.SetNavigationLocked(false); // 복귀 완료 후 이동 허용
-                    if (firstClear) GrantReward();
-                });
-            }
-            else if (firstClear)
-            {
-                GrantReward();
-            }
+                    screenFlow.GoTo(stageScreenIndex, () =>
+                    {
+                        screenFlow.SetNavigationLocked(false); // 복귀 완료 후 이동 허용
+                        if (firstClear) GrantReward();
+                    });
+                }
+                else if (firstClear)
+                {
+                    GrantReward();
+                }
+            };
+
+            if (wait > 0f) Tw.Delay(wait, goToStage);
+            else goToStage();
         });
     }
 
@@ -449,6 +536,15 @@ public class BattleManager : MonoBehaviour
 
         t.position = holderPos;
         return 0f;
+    }
+
+    // 전투 종료 시 보드를 홀더 위치에서 스포너 위치로 되돌린다(스포너 자체는 안 움직임).
+    // 다음 전투 시작 시 SpawnBoardGame이 이 인스턴스를 파괴하고 새로 생성한다.
+    float ReturnBoardToSpawner()
+    {
+        if (_boardGameInstance == null || boardSpawnPoint == null) return 0f;
+        _boardGameInstance.transform.DOMove(boardSpawnPoint.position, boardMoveDuration).SetEase(boardMoveEase);
+        return boardMoveDuration;
     }
 
     void GrantReward()

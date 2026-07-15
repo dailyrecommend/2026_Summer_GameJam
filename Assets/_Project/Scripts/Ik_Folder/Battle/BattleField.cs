@@ -29,6 +29,8 @@ public class BattleField : MonoBehaviour
     [Header("딜 연출 (드로우 더미에서 한 장씩)")]
     [Tooltip("카드가 뽑혀 나오는 시작 위치(뽑을 카드 더미)")]
     [SerializeField] Transform drawPile;
+    [Tooltip("뽑을 더미 높이 표시(선택). 카드가 도착할 때마다 하나씩 줄어듦")]
+    [SerializeField] PileStackVisual drawStackVisual;
     [SerializeField] float dealStagger = 0.09f;
     [SerializeField] float dealDuration = 0.25f;
     [SerializeField] Ease dealEase = Ease.OutCubic;
@@ -48,6 +50,8 @@ public class BattleField : MonoBehaviour
     [Header("버림 / 리셔플")]
     [Tooltip("버린 카드가 쌓이는 위치")]
     [SerializeField] Transform discardPile;
+    [Tooltip("버린 더미 높이 표시(선택). 카드가 도착할 때마다 하나씩 늘어남")]
+    [SerializeField] PileStackVisual discardStackVisual;
     [SerializeField] float discardDuration = 0.3f;
     [SerializeField] Ease discardEase = Ease.OutCubic;
     [Tooltip("리셔플 연출: 버린 더미 → 뽑을 더미로 넘어가는 한 장 시간/간격")]
@@ -56,6 +60,8 @@ public class BattleField : MonoBehaviour
     [SerializeField] Ease reshuffleEase = Ease.OutCubic;
     [Tooltip("리셔플 때 실제로 날리는 카드 연출 최대 장수")]
     [SerializeField] int reshuffleVisualMax = 6;
+    [Tooltip("목표 위치에 도착한 카드가 사라지기 전 가만히 있는 시간(초). 버림/리셔플 유령 카드 둘 다 적용")]
+    [SerializeField] float vanishDelay = 0.15f;
 
     readonly List<FieldCard> _cards = new List<FieldCard>();
     Vector3 _baseLocalPos;
@@ -66,6 +72,20 @@ public class BattleField : MonoBehaviour
     void Awake()
     {
         if (cardPrefab != null) _baseLocalPos = cardPrefab.transform.localPosition;
+    }
+
+    /// <summary>전투 시작 시 호출. total = 이 쪽 덱 전체 장수. 뽑을 더미는 꽉 찬 채로, 버린 더미는 빈 채로 시작.</summary>
+    public void BindPileVisuals(int total)
+    {
+        drawStackVisual?.Bind(total, total);
+        discardStackVisual?.Bind(total, 0);
+    }
+
+    /// <summary>뽑을/버린 더미 모형의 텍스쳐 교체(스테이지마다 카드 더미 생김새가 다를 때).</summary>
+    public void SetPileTexture(Texture tex)
+    {
+        drawStackVisual?.SetTexture(tex);
+        discardStackVisual?.SetTexture(tex);
     }
 
     // ── 배치 ──────────────────────────────────────────────────
@@ -90,8 +110,10 @@ public class BattleField : MonoBehaviour
     /// 카드들을 필드에 추가(드로우 더미에서 뒷면으로 나와 이동). 기존 카드는 유지·재정렬.
     /// 새로 온 카드들은 전부 도착한 뒤 잠깐 대기했다가 좌→우 순서로 하나씩 뒤집힌다.
     /// onRevealed는 그 공개가 전부 끝났을 때 호출(그 전까지 상호작용을 막는 용도로 쓸 것).
+    /// remainingAfterDraw: 이 카드들을 다 뽑은 '뒤'의 뽑을 더미 장수(CardPile.DrawCount).
+    /// 지정하면 각 카드가 실제로 도착하는 순간에 맞춰 뽑을 더미 높이를 하나씩 줄인다.
     /// </summary>
-    public void AddCards(IEnumerable<CardData> newData, System.Action onRevealed = null)
+    public void AddCards(IEnumerable<CardData> newData, System.Action onRevealed = null, int remainingAfterDraw = -1)
     {
         if (cardPrefab == null) { onRevealed?.Invoke(); return; }
         Transform parent = cardParent != null ? cardParent : transform;
@@ -111,7 +133,7 @@ public class BattleField : MonoBehaviour
 
         if (added.Count == 0) { Reposition(null); onRevealed?.Invoke(); return; }
 
-        Reposition(added);
+        Reposition(added, remainingAfterDraw);
 
         // 마지막 카드가 도착하는 시점 = (장수-1)*스태거 + 이동시간. 그 후 대기했다가 순차 공개.
         float lastArrival = (added.Count - 1) * dealStagger + dealDuration;
@@ -122,7 +144,8 @@ public class BattleField : MonoBehaviour
     public void Arrange() => Reposition(null);
 
     // dealNew에 든 카드는 더미에서 휙 날아오되(뒷면 유지, 도착해도 안 뒤집음), 나머지는 즉시 정렬.
-    void Reposition(List<FieldCard> dealNew)
+    // remainingAfterDraw >= 0 이면, 각 카드가 도착할 때마다 뽑을 더미 높이를 그만큼씩 줄여서 표시.
+    void Reposition(List<FieldCard> dealNew, int remainingAfterDraw = -1)
     {
         _cards.Sort((a, b) => a.Data.Number.CompareTo(b.Data.Number)); // 좌:낮음, 우:높음
 
@@ -149,10 +172,21 @@ public class BattleField : MonoBehaviour
 
             if (dealNew != null && dealNew.Contains(card))
             {
+                int arrivedOrder = dealIndex; // 0-based 도착 순서
                 float delay = dealIndex * dealStagger;
                 dealIndex++;
+
+                System.Action onArrived = null;
+                if (drawStackVisual != null && remainingAfterDraw >= 0)
+                {
+                    // 이 카드가 도착한 시점에 뽑을 더미가 보여줘야 할 장수:
+                    // 최종 남은 장수 + 아직 도착 안 한 카드 수(이 카드는 방금 도착했으므로 제외).
+                    int displayAfter = remainingAfterDraw + (dealNew.Count - 1 - arrivedOrder);
+                    onArrived = () => drawStackVisual.SetCount(displayAfter);
+                }
+
                 // 도착해도 뒤집지 않음(공개는 따로 순차 진행). 드로우 사운드는 PlaceAt이 공통 처리.
-                card.PlaceAt(target, dealDuration, dealEase, delay);
+                card.PlaceAt(target, dealDuration, dealEase, delay, onArrived);
             }
             else
             {
@@ -219,7 +253,9 @@ public class BattleField : MonoBehaviour
         if (card == null) return;
         _cards.Remove(card); // 필드에 남아 있으면 제거
         if (pile != null && card.Data != null) pile.Discard(card.Data);
-        MoveToDiscardAndDestroy(card);
+        // 이 시점에 pile.DiscardCount는 이미 이 카드가 반영된 최종 값 — 카드가 실제로 도착했을 때 그 값을 보여준다.
+        int discardCountAfter = pile != null ? pile.DiscardCount : -1;
+        MoveToDiscardAndDestroy(card, discardCountAfter);
     }
 
     /// <summary>필드에 남은 모든 카드를 버린 더미로 보낸다.</summary>
@@ -230,39 +266,58 @@ public class BattleField : MonoBehaviour
         foreach (FieldCard c in snapshot)
         {
             if (pile != null && c != null && c.Data != null) pile.Discard(c.Data);
-            MoveToDiscardAndDestroy(c);
+            int discardCountAfter = pile != null ? pile.DiscardCount : -1;
+            MoveToDiscardAndDestroy(c, discardCountAfter);
         }
     }
 
-    void MoveToDiscardAndDestroy(FieldCard card)
+    // 버림 루프: (1) 제자리에서 뒷면으로 뒤집는다 → (2) 완료되면 버린 더미로 이동한다 → (3) 도착하면 버린 더미 높이 갱신.
+    void MoveToDiscardAndDestroy(FieldCard card, int discardCountAfter = -1)
     {
         if (card == null) return;
 
-        card.SetFaceDown(); // 버린 더미로 갈 땐 뒷면
+        FieldCard c = card;
+        c.FlipDown(() =>
+        {
+            if (c == null) return;
 
-        if (discardPile != null)
-        {
-            Transform parent = cardParent != null ? cardParent : transform;
-            Vector3 local = parent.InverseTransformPoint(discardPile.position);
-            FieldCard c = card;
-            card.PlaceAt(local, discardDuration, discardEase, 0f, () => { if (c != null) Destroy(c.gameObject); });
-        }
-        else
-        {
-            Destroy(card.gameObject);
-        }
+            if (discardPile != null)
+            {
+                Transform parent = cardParent != null ? cardParent : transform;
+                Vector3 local = parent.InverseTransformPoint(discardPile.position);
+                c.PlaceAt(local, discardDuration, discardEase, 0f, () =>
+                {
+                    if (discardStackVisual != null && discardCountAfter >= 0)
+                        discardStackVisual.SetCount(discardCountAfter);
+                    // 도착 즉시 사라지지 않고 잠깐 머문 뒤 삭제.
+                    Tw.Delay(vanishDelay, () => { if (c != null) Destroy(c.gameObject); });
+                });
+            }
+            else
+            {
+                Destroy(c.gameObject);
+            }
+        });
     }
 
-    /// <summary>버린 더미 → 뽑을 더미로 카드가 넘어가는 리셔플 연출(순수 시각). 뒷면 + 텍스쳐.</summary>
-    public void PlayReshuffle(IReadOnlyList<CardData> cards)
+    /// <summary>
+    /// 버린 더미 → 뽑을 더미로 카드가 넘어가는 리셔플 연출(순수 시각). 뒷면 + 텍스쳐.
+    /// 카드가 하나 도착할 때마다 뽑을 더미 높이가 한 장씩 늘고, 출발할 때마다 버린 더미 높이가 한 장씩 준다.
+    /// </summary>
+    public void PlayReshuffle(CardPile pile)
     {
-        if (cardPrefab == null || drawPile == null || discardPile == null || cards == null || cards.Count == 0) return;
+        if (cardPrefab == null || drawPile == null || discardPile == null || pile == null) return;
+        IReadOnlyList<CardData> cards = pile.DiscardCards;
+        if (cards == null || cards.Count == 0) return;
 
         Transform parent = cardParent != null ? cardParent : transform;
         Vector3 fromLocal = parent.InverseTransformPoint(discardPile.position);
         Vector3 toLocal = parent.InverseTransformPoint(drawPile.position);
 
         int n = Mathf.Min(cards.Count, reshuffleVisualMax);
+        int baseDrawCount = pile.DrawCount;       // 리셔플 시작 전 뽑을 더미 장수
+        int baseDiscardCount = pile.DiscardCount; // 리셔플 시작 전 버린 더미 장수
+
         for (int i = 0; i < n; i++)
         {
             FieldCard ghost = Instantiate(cardPrefab, parent);
@@ -273,8 +328,20 @@ public class BattleField : MonoBehaviour
             ghost.SnapTo(fromLocal);
 
             float delay = i * reshuffleStagger;
+            int arrivedOrder = i;
             FieldCard g = ghost;
-            ghost.PlaceAt(toLocal, reshuffleDuration, reshuffleEase, delay, () => { if (g != null) Destroy(g.gameObject); });
+
+            // 버린 더미에서 빠져나가는 시점(출발) → 버린 더미 높이 감소.
+            if (discardStackVisual != null)
+                Tw.Delay(delay, () => discardStackVisual.SetCount(baseDiscardCount - (arrivedOrder + 1)));
+
+            ghost.PlaceAt(toLocal, reshuffleDuration, reshuffleEase, delay, () =>
+            {
+                // 뽑을 더미에 도착하는 시점 → 뽑을 더미 높이 증가.
+                if (drawStackVisual != null)
+                    drawStackVisual.SetCount(baseDrawCount + (arrivedOrder + 1));
+                Tw.Delay(vanishDelay, () => { if (g != null) Destroy(g.gameObject); });
+            });
         }
     }
 
@@ -283,7 +350,7 @@ public class BattleField : MonoBehaviour
     {
         int n = Mathf.Min(Mathf.Max(count, 0), reshuffleVisualMax);
         if (n <= 0) return 0f;
-        return (n - 1) * reshuffleStagger + reshuffleDuration;
+        return (n - 1) * reshuffleStagger + reshuffleDuration + vanishDelay;
     }
 
     public void Clear()

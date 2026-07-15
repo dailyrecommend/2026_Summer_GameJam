@@ -15,6 +15,8 @@ public class StageData : ScriptableObject
     [Header("생김새")]
     [Tooltip("캐러셀/전투에 표시할 이 스테이지의 오브젝트(보드게임 등)")]
     [SerializeField] GameObject boardGamePrefab;
+    [Tooltip("이 스테이지 전투에서 카드 뒷면에 입힐 텍스쳐(보드게임마다 카드 생김새가 다를 때)")]
+    [SerializeField] Texture cardBackTexture;
 
     [Header("적")]
     [Tooltip("이 스테이지 적의 덱(뽑을 더미 소스). 비우면 플레이어 덱 복사")]
@@ -34,6 +36,7 @@ public class StageData : ScriptableObject
     public string DisplayName => displayName;
     public string Description => description;
     public GameObject BoardGamePrefab => boardGamePrefab;
+    public Texture CardBackTexture => cardBackTexture;
     public IReadOnlyList<CardData> EnemyDeck => enemyDeck;
     public AIStyle AiStyle => aiStyle;
     public CardData FirstClearReward => firstClearReward;

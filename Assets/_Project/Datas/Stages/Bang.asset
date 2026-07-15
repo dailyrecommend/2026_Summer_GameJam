@@ -18,6 +18,7 @@ MonoBehaviour:
     \uC120\uD0DD\uD558\uC9C0 \uC54A\uC73C\uBA74 \uD50C\uB808\uC774\uC5B4 \uCE74\uB4DC
     \uC911 \uBB34\uC791\uC704\uB85C \uCE74\uB4DC \uD558\uB098\uB97C \uC120\uD0DD\uD569\uB2C8\uB2E4."
   boardGamePrefab: {fileID: 8163554083102890994, guid: 475e3e0ee887fc34ab2d8a7b2e25b6ab, type: 3}
+  cardBackTexture: {fileID: 2800000, guid: 65b5f1735a393874c8fffcb214ab3932, type: 3}
   enemyDeck:
   - {fileID: 11400000, guid: e8dba35abe48ec8429c5d97c77a4ac33, type: 2}
   - {fileID: 11400000, guid: 2f824ce4cb77e224cb6404f5d2b6a51e, type: 2}
