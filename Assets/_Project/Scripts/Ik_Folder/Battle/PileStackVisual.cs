@@ -27,10 +27,17 @@ public class PileStackVisual : MonoBehaviour
     Vector3 _baseScale = Vector3.one;
     MaterialPropertyBlock _mpb;
 
+    bool _baseScaleCaptured; // Awake 또는 Bind(선점) 중 먼저 실행된 쪽에서만 baseScale을 잡는다.
+
     void Awake()
     {
         if (stackVisual == null) stackVisual = transform;
-        _baseScale = stackVisual.localScale;
+        if (!_baseScaleCaptured)
+        {
+            _baseScale = stackVisual.localScale;
+            _baseScaleCaptured = true;
+        }
+        Debug.Log($"[PileStackVisual:{name}] Awake baseScale={_baseScale} activeInHierarchy={gameObject.activeInHierarchy}");
         if (pileRenderer == null) pileRenderer = stackVisual.GetComponentInChildren<Renderer>();
     }
 
@@ -51,15 +58,28 @@ public class PileStackVisual : MonoBehaviour
     /// </summary>
     public void Bind(int total, int initialCount)
     {
+        if (!_baseScaleCaptured)
+        {
+            // Awake가 아직 안 돌았다(오브젝트/부모가 비활성 상태였을 가능성) → 지금 강제로 캡처.
+            // (나중에 Awake가 뒤늦게 실행돼도 이미 캡처된 값을 덮어쓰지 않는다)
+            Debug.LogWarning($"[PileStackVisual:{name}] Bind가 Awake보다 먼저 호출됨! baseScale을 지금 강제로 캡처합니다.");
+            if (stackVisual == null) stackVisual = transform;
+            _baseScale = stackVisual.localScale;
+            _baseScaleCaptured = true;
+        }
+
         _total = Mathf.Max(1, total);
         _count = Mathf.Clamp(initialCount, 0, _total);
+        Debug.Log($"[PileStackVisual:{name}] Bind total={_total} initialCount={_count} baseScale={_baseScale} stackVisual={(stackVisual != null ? stackVisual.name : "null")}");
         SnapToCurrentCount();
     }
 
     /// <summary>지금 이 더미가 보여줘야 할 장수. 호출 시점에 맞춰 목표 높이가 갱신된다(Update에서 부드럽게 수렴).</summary>
     public void SetCount(int count)
     {
-        _count = Mathf.Clamp(count, 0, _total);
+        int clamped = Mathf.Clamp(count, 0, _total);
+        Debug.Log($"[PileStackVisual:{name}] SetCount {count} (clamped {clamped}) / total {_total}");
+        _count = clamped;
     }
 
     // 현재 _count에 해당하는 스케일을 lerp 없이 즉시 적용.

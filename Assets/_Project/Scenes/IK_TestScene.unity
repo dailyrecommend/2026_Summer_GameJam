@@ -4536,8 +4536,13 @@ MonoBehaviour:
   minScale: 0
   maxScale: 1
   smooth: 10
-  pileRenderer: {fileID: 0}
+  pileRenderer: {fileID: 1572712343}
   texturePropertyName: _BaseMap
+--- !u!23 &1572712343 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: b73efad95be981343a5748bfd9d51967, type: 3}
+  m_PrefabInstance: {fileID: 1572712339}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1593232000
 GameObject:
   m_ObjectHideFlags: 0
