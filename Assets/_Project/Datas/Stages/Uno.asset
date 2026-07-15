@@ -29,5 +29,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: dd3bba56e0342904793bd3f0cb38646f, type: 2}
   - {fileID: 11400000, guid: 46afae85374174e44b393cfeb30278b1, type: 2}
   aiStyle: 2
+  enemyPassive: 2
   firstClearReward: {fileID: 11400000, guid: dd3bba56e0342904793bd3f0cb38646f, type: 2}
   stageBgm: {fileID: 8300000, guid: 7328dce5b30c5504fbb0a742e1f794e6, type: 3}

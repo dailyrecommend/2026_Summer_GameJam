@@ -104,6 +104,13 @@ public class BattleManager : MonoBehaviour
     StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
     int _activeStageIndex = -1;
 
+    [Header("패시브: 뱅(플레이어 무선택 시 강제 승부)")]
+    [Tooltip("플레이어가 이 시간 동안 승부하지 않으면 무작위 카드로 강제 승부")]
+    [SerializeField] float bangIdleTimeout = 10f;
+
+    bool _enemyLostLastRound;   // 다빈치 코드 패시브: 적이 직전 라운드에 패배했는지
+    Tween _bangIdleTimer;       // 뱅 패시브: 무선택 타이머
+
     /// <summary>스테이지를 지정해 전투 시작. (적 덱/보상을 이 스테이지에서 가져옴)</summary>
     public void StartBattle(StageData stage) => StartBattle(stage, -1);
 
@@ -154,6 +161,9 @@ public class BattleManager : MonoBehaviour
         _enemyDoubleNext = false;
         _playerNoWinNext = false;
         _enemyNoWinNext = false;
+        _enemyLostLastRound = false;
+        _bangIdleTimer?.Kill();
+        _bangIdleTimer = null;
         UpdateScoreUI();
         SetMessage("");
 
@@ -197,6 +207,28 @@ public class BattleManager : MonoBehaviour
         }
         _enemyPile.Init(eCards);
         enemyField.BindPileVisuals(eCards.Count);
+
+        // 우노 패시브: 리셔플될 때 고유카드 하나를 맨 위로(리스트 끝 = 다음에 뽑힘). 다른 스테이지면 훅 해제.
+        if (_activeStage != null && _activeStage.EnemyPassive == EnemyPassive.Uno)
+        {
+            _enemyPile.OnReshuffled = drawList =>
+            {
+                List<int> specialIndices = new List<int>();
+                for (int i = 0; i < drawList.Count; i++)
+                    if (drawList[i] != null && drawList[i].IsSpecial) specialIndices.Add(i);
+                if (specialIndices.Count == 0) return;
+
+                int pick = specialIndices[Random.Range(0, specialIndices.Count)];
+                CardData special = drawList[pick];
+                drawList.RemoveAt(pick);
+                drawList.Add(special); // 리스트 끝 = Draw()가 다음에 뽑는 자리
+                Debug.Log($"[패시브] 우노 → 리셔플 시 고유카드 '{special.DisplayName}' 맨 위로");
+            };
+        }
+        else
+        {
+            _enemyPile.OnReshuffled = null;
+        }
 
         playerField.Clear();
         enemyField.Clear();
@@ -286,10 +318,21 @@ public class BattleManager : MonoBehaviour
             _waitingPlayer = true;
             if (playerInteractor != null) playerInteractor.SetLocked(false);
             SetMessage("카드를 선택하세요");
+
+            // 뱅 패시브: 플레이어가 일정 시간 승부하지 않으면 무작위 카드로 강제 승부.
+            if (_activeStage != null && _activeStage.EnemyPassive == EnemyPassive.Bang)
+            {
+                _bangIdleTimer?.Kill();
+                _bangIdleTimer = Tw.Delay(bangIdleTimeout, ForcePlayerRandomCommit);
+            }
         };
 
         RefillField(playerField, _playerPile, onSideRevealed);
-        RefillField(enemyField, _enemyPile, onSideRevealed);
+
+        // 다빈치 코드 패시브: 적이 직전 라운드에 패배했으면, 이번에 새로 뽑는 카드는 뒷면 유지.
+        bool keepFaceDown = _activeStage != null && _activeStage.EnemyPassive == EnemyPassive.DavinciCode
+                            && _enemyLostLastRound;
+        RefillField(enemyField, _enemyPile, onSideRevealed, keepFaceDown);
     }
 
     bool NeedReshuffle(BattleField field, CardPile pile)
@@ -298,7 +341,7 @@ public class BattleManager : MonoBehaviour
         return pile.DrawCount < need && pile.DiscardCount > 0;
     }
 
-    void RefillField(BattleField field, CardPile pile, System.Action onRevealed)
+    void RefillField(BattleField field, CardPile pile, System.Action onRevealed, bool keepFaceDown = false)
     {
         int need = handSize - field.Cards.Count;
         List<CardData> drawn = new List<CardData>();
@@ -307,8 +350,22 @@ public class BattleManager : MonoBehaviour
             CardData c = pile.Draw();
             if (c != null) drawn.Add(c);
         }
-        if (drawn.Count > 0) field.AddCards(drawn, onRevealed, pile.DrawCount);
+        if (drawn.Count > 0) field.AddCards(drawn, onRevealed, pile.DrawCount, keepFaceDown);
         else onRevealed?.Invoke();
+    }
+
+    // 뱅 패시브: 시간 초과 시 플레이어 필드 카드 중 무작위 하나를 강제로 승부에 올림.
+    void ForcePlayerRandomCommit()
+    {
+        _bangIdleTimer = null;
+        if (!_waitingPlayer || _gameOver) return;
+
+        IReadOnlyList<FieldCard> cards = playerField.Cards;
+        if (cards.Count == 0) return;
+
+        FieldCard chosen = cards[Random.Range(0, cards.Count)];
+        Debug.Log($"[패시브] 뱅 → 시간 초과, 무작위 카드 강제 승부: {chosen.Data?.DisplayName}");
+        OnPlayerCommit(chosen);
     }
 
     // 플레이어가 승부에 올림 → 적도 선택 → 공개
@@ -318,6 +375,10 @@ public class BattleManager : MonoBehaviour
         if (!playerField.Contains(card)) return; // 적 카드 클릭 방지(레이어로도 막을 것)
         _waitingPlayer = false;
         if (playerInteractor != null) playerInteractor.SetLocked(true);
+
+        // 뱅 패시브 무선택 타이머는 승부가 성사됐으니 취소.
+        _bangIdleTimer?.Kill();
+        _bangIdleTimer = null;
 
         _playerChosen = card;
         playerField.CommitCard(card);
@@ -435,6 +496,7 @@ public class BattleManager : MonoBehaviour
         _enemyNoWinNext = sr.EnemyNoWinNextRound;
         _playerSpecialLast = sr.PlayerCardIsSpecial;
         _enemySpecialLast = sr.EnemyCardIsSpecial;
+        _enemyLostLastRound = cmp > 0; // 다빈치 코드 패시브: 적이 이번에 졌는지(플레이어 승 = 적 패배)
 
         // 승부에 사용된 카드만 각자 버린 더미로. 리버스 교환 시 소유 더미를 서로 바꿔 버린다.
         if (sr.SwapCards)
@@ -459,6 +521,8 @@ public class BattleManager : MonoBehaviour
     void EndGame(bool playerWon)
     {
         _gameOver = true;
+        _bangIdleTimer?.Kill();
+        _bangIdleTimer = null;
         SetMessage(playerWon ? "게임 승리!" : "게임 패배...");
         if (playerInteractor != null) playerInteractor.SetLocked(true);
 

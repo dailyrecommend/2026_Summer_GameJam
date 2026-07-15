@@ -16,6 +16,12 @@ public class CardPile
     /// <summary>버린 더미의 카드들(리셔플 연출용).</summary>
     public IReadOnlyList<CardData> DiscardCards => _discard;
 
+    /// <summary>
+    /// 리셔플 직후(버린 더미를 뽑을 더미로 합쳐 섞은 뒤) 호출되는 후크. 우노 패시브 등에서
+    /// 뽑을 더미 리스트를 직접 후처리(재배치)할 때 쓴다. 리스트의 '마지막 인덱스'가 다음에 뽑히는 카드.
+    /// </summary>
+    public System.Action<List<CardData>> OnReshuffled;
+
     /// <summary>주어진 카드들로 뽑을 더미를 초기화하고 섞는다.</summary>
     public void Init(IEnumerable<CardData> cards)
     {
@@ -48,6 +54,7 @@ public class CardPile
         _draw.AddRange(_discard);
         _discard.Clear();
         Shuffle(_draw);
+        OnReshuffled?.Invoke(_draw);
     }
 
     static void Shuffle(List<CardData> list)

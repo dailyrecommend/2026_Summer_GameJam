@@ -23,6 +23,8 @@ public class StageData : ScriptableObject
     [SerializeField] List<CardData> enemyDeck = new List<CardData>();
     [Tooltip("이 스테이지 적의 카드 선택 성향. 개별 로직에 해당 없으면 공통 로직으로 대체")]
     [SerializeField] AIStyle aiStyle = AIStyle.None;
+    [Tooltip("이 스테이지 적의 고정 패시브(라운드 흐름에 개입하는 규칙)")]
+    [SerializeField] EnemyPassive enemyPassive = EnemyPassive.None;
 
     [Header("보상")]
     [Tooltip("최초 클리어 시 지급하는 카드")]
@@ -39,6 +41,7 @@ public class StageData : ScriptableObject
     public Texture CardBackTexture => cardBackTexture;
     public IReadOnlyList<CardData> EnemyDeck => enemyDeck;
     public AIStyle AiStyle => aiStyle;
+    public EnemyPassive EnemyPassive => enemyPassive;
     public CardData FirstClearReward => firstClearReward;
     public AudioClip StageBgm => stageBgm;
 }

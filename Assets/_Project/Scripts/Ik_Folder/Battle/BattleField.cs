@@ -112,8 +112,10 @@ public class BattleField : MonoBehaviour
     /// onRevealed는 그 공개가 전부 끝났을 때 호출(그 전까지 상호작용을 막는 용도로 쓸 것).
     /// remainingAfterDraw: 이 카드들을 다 뽑은 '뒤'의 뽑을 더미 장수(CardPile.DrawCount).
     /// 지정하면 각 카드가 실제로 도착하는 순간에 맞춰 뽑을 더미 높이를 하나씩 줄인다.
+    /// keepFaceDown: true면 이번에 온 카드들은 공개(뒤집기) 단계를 건너뛰고 뒷면 그대로 남는다
+    /// (다빈치 코드 패시브: 패배 후 다음 드로우 카드는 승부에 나올 때까지 숨겨둠).
     /// </summary>
-    public void AddCards(IEnumerable<CardData> newData, System.Action onRevealed = null, int remainingAfterDraw = -1)
+    public void AddCards(IEnumerable<CardData> newData, System.Action onRevealed = null, int remainingAfterDraw = -1, bool keepFaceDown = false)
     {
         if (cardPrefab == null) { onRevealed?.Invoke(); return; }
         Transform parent = cardParent != null ? cardParent : transform;
@@ -137,7 +139,7 @@ public class BattleField : MonoBehaviour
 
         // 마지막 카드가 도착하는 시점 = (장수-1)*스태거 + 이동시간. 그 후 대기했다가 순차 공개.
         float lastArrival = (added.Count - 1) * dealStagger + dealDuration;
-        Tw.Delay(lastArrival + revealPause, () => RevealSequence(added, onRevealed));
+        Tw.Delay(lastArrival + revealPause, () => RevealSequence(added, onRevealed, keepFaceDown));
     }
 
     /// <summary>현재 카드들을 중앙 정렬로 재배치(즉시).</summary>
@@ -196,7 +198,8 @@ public class BattleField : MonoBehaviour
     }
 
     // 카드들을 좌→우(정렬된 순서)로 하나씩 순차 공개. 전부 끝나면 onDone 호출.
-    void RevealSequence(List<FieldCard> cards, System.Action onDone)
+    // keepFaceDown이면 뒤집지 않고 뒷면 그대로 둔다(다빈치 코드 패시브) — 타이밍은 동일하게 유지.
+    void RevealSequence(List<FieldCard> cards, System.Action onDone, bool keepFaceDown = false)
     {
         List<FieldCard> ordered = new List<FieldCard>(cards);
         ordered.Sort((a, b) => a.Data.Number.CompareTo(b.Data.Number));
@@ -206,8 +209,11 @@ public class BattleField : MonoBehaviour
         {
             FieldCard c = ordered[i];
             float delay = i * revealStagger;
-            Tw.Delay(delay, () => { if (c != null) c.FlipUp(); });
-            maxFlipDuration = Mathf.Max(maxFlipDuration, c.FlipDuration);
+            if (!keepFaceDown)
+            {
+                Tw.Delay(delay, () => { if (c != null) c.FlipUp(); });
+                maxFlipDuration = Mathf.Max(maxFlipDuration, c.FlipDuration);
+            }
         }
 
         float total = (ordered.Count - 1) * revealStagger + maxFlipDuration;
@@ -224,6 +230,9 @@ public class BattleField : MonoBehaviour
             Debug.LogWarning($"[BattleField] CommitCard 무시: 카드가 이 필드에 없음 ({name})");
             return;
         }
+
+        // 다빈치 코드 패시브 등으로 뒷면 상태였던 카드는 승부에 나오는 순간 공개.
+        if (card.IsFaceDown) card.FlipUp();
 
         if (showdownSlot == null)
         {

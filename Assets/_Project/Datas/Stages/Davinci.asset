@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   id: Da
   displayName: "\uB2E4\uBE48\uCE58 \uCF54\uB4DC"
-  description: "\uB77C\uC6B4\uB4DC \uC2DC\uC791 \uD6C4 \uCE74\uB4DC 4\uC7A5 \uC911
-    \uBB34\uC791\uC704\uB85C \uD55C \uC7A5\uC774 \uB4A4\uC9D1\uC5B4\uC9D1\uB2C8\uB2E4."
+  description: "\uB77C\uC6B4\uB4DC \uD328\uBC30 \uC2DC \uB2E4\uC74C \uBF51\uC744
+    \uCE74\uB4DC\uAC00 \uB4A4\uC9D1\uC5B4\uC9C4 \uC0C1\uD0DC\uB85C \uB4DC\uB85C\uC6B0\uD569\uB2C8\uB2E4."
   boardGamePrefab: {fileID: 2694011667810015443, guid: 7bd7f5c8d28853644b4768f61c024861, type: 3}
   cardBackTexture: {fileID: 2800000, guid: 19d2bf7c95b33704c9b6df4ed25c257c, type: 3}
   enemyDeck:
@@ -27,5 +27,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: df073bef3bf209844b680c90c3ea0dc9, type: 2}
   - {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}
   aiStyle: 1
+  enemyPassive: 1
   firstClearReward: {fileID: 11400000, guid: fe17f3949f478c6469ba7f3fe94ebc90, type: 2}
   stageBgm: {fileID: 8300000, guid: b4ff9ee79527e124781b2ca92ad9ce00, type: 3}
