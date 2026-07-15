@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpecialCardData
   id: DDJ
   displayName: "\uB2E4\uBE48\uCE58 \uC870\uCEE4"
-  description: "0~13\uC758 \uC22B\uC790\uB85C \uBB34\uC791\uC704\uB85C \uBCC0\uD654\uD569\uB2C8\uB2E4. "
+  description: "0~11\uC758 \uC22B\uC790\uB85C \uBB34\uC791\uC704\uB85C \uBCC0\uD654\uD569\uB2C8\uB2E4. "
   texture: {fileID: 2800000, guid: 612fca038d7863645967db6cc21798a3, type: 3}
   number: 7
   effect: 2
