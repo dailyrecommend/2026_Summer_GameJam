@@ -34,11 +34,13 @@ public class FieldCard : MonoBehaviour
     [SerializeField] float tiltMaxAngle = 12f;
     [SerializeField] float tiltSmooth = 14f;
 
-    [Header("승부 연출 - 특수카드 발동 (3축 회전 펀치)")]
-    [Tooltip("특수카드 발동 시 흔들리는 회전 각도(오일러, 도). X/Y/Z를 다 채우면 3차원적으로 통통 튐")]
-    [SerializeField] Vector3 specialPunchRotation = new Vector3(12f, 15f, 18f);
-    [SerializeField] float specialPunchDuration = 0.3f;
-    [SerializeField] int specialPunchVibrato = 10;
+    [Header("승부 연출 - 특수카드 VFX (재생 → 1초 뒤 능력 적용)")]
+    [Tooltip("VFX가 스폰될 위치(비우면 카드 위치 사용)")]
+    [SerializeField] Transform vfxSpawnPoint;
+    [Tooltip("VFX가 재생되고 나서 실제 능력이 적용되기까지의 대기 시간")]
+    [SerializeField] float vfxToAbilityDelay = 1f;
+    [Tooltip("VFX 프리팹에 자체 파괴 로직이 없을 때를 대비한 안전 파괴 시간(0 이하면 자동 파괴 안 함)")]
+    [SerializeField] float vfxAutoDestroy = 3f;
 
     [Header("승부 연출 - 승리 카드 (들어올림 + 3축 회전 펀치)")]
     [SerializeField] float winLiftHeight = 0.15f;
@@ -247,11 +249,24 @@ public class FieldCard : MonoBehaviour
         _moveTween.OnComplete(() => onDone?.Invoke());
     }
 
-    /// <summary>특수카드 발동 연출: 제자리에서 회전 펀치. 완료 시 onDone 호출.</summary>
-    public void PlaySpecialEffect(System.Action onDone = null)
+    /// <summary>
+    /// 특수카드 고유 VFX를 카드 위치에서 재생. VFX가 재생된 뒤 vfxToAbilityDelay만큼 지나면
+    /// onAbilityApply를 호출한다(실제 능력이 이 시점에 적용됨) — VFX가 없어도 지연은 그대로 적용.
+    /// </summary>
+    public void PlaySpecialSymbolEffect(GameObject vfxPrefab, System.Action onAbilityApply)
     {
         if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.SpecialActivate);
-        PlayRotationPunch(specialPunchRotation, specialPunchDuration, specialPunchVibrato, onDone);
+        SpawnVfx(vfxPrefab);
+        Tw.Delay(vfxToAbilityDelay, () => onAbilityApply?.Invoke());
+    }
+
+    /// <summary>자체 파괴 로직이 없는 프리팹을 대비해 vfxAutoDestroy 후 안전하게 파괴.</summary>
+    void SpawnVfx(GameObject prefab)
+    {
+        if (prefab == null) return;
+        Transform origin = vfxSpawnPoint != null ? vfxSpawnPoint : transform;
+        GameObject vfx = Instantiate(prefab, origin.position, origin.rotation);
+        if (vfxAutoDestroy > 0f) Destroy(vfx, vfxAutoDestroy);
     }
 
     /// <summary>승리 카드 연출: 살짝 들어올려진 뒤 회전 펀치(발라트로 느낌). 완료 시 onDone 호출.</summary>

@@ -412,7 +412,7 @@ public class BattleManager : MonoBehaviour
         bool playerSpecialNow = _playerChosen != null && _playerChosen.Data is SpecialCardData;
         bool enemySpecialNow = _enemyChosen != null && _enemyChosen.Data is SpecialCardData;
 
-        // 특수 카드 효과 적용. 전 라운드 특수 여부(_..Last)를 넘겨 조건부 효과가 참조하게 한다.
+        // 특수 카드 효과 적용 대상. 전 라운드 특수 여부(_..Last)를 넘겨 조건부 효과가 참조하게 한다.
         ShowdownResult sr = new ShowdownResult
         {
             PlayerNumber = p,
@@ -434,34 +434,56 @@ public class BattleManager : MonoBehaviour
         _playerNoWinNext = false;
         _enemyNoWinNext = false;
 
-        if (_playerChosen != null && _playerChosen.Data is SpecialCardData ps) ps.OnShowdown(sr, true);
-        if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData es) es.OnShowdown(sr, false);
+        // 1) 카드는 이미 승부처(승부 슬롯)로 이동해 있음(OnPlayerCommit의 CommitCard에서 처리).
+        // 2) 특수카드를 낸 쪽은 고유 심볼이 떠오르는 연출을 하고, 심볼이 뜬 지 1초 뒤에
+        //    실제 능력(OnShowdown)이 적용된다 → 양쪽 다 적용 완료되면 3단계로.
+        if (playerSpecialNow || enemySpecialNow)
+        {
+            int pending = (playerSpecialNow ? 1 : 0) + (enemySpecialNow ? 1 : 0);
+            System.Action onOneApplied = () =>
+            {
+                pending--;
+                if (pending > 0) return;
+                ResolveAfterSpecials(sr);
+            };
 
-        // 승리 판정은 여기서 미리 계산(연출 단계에서 승자를 알아야 하므로).
+            if (playerSpecialNow)
+            {
+                SpecialCardData psd = (SpecialCardData)_playerChosen.Data;
+                _playerChosen.PlaySpecialSymbolEffect(psd.VfxPrefab, () =>
+                {
+                    psd.OnShowdown(sr, true);
+                    onOneApplied();
+                });
+            }
+            if (enemySpecialNow)
+            {
+                SpecialCardData esd = (SpecialCardData)_enemyChosen.Data;
+                _enemyChosen.PlaySpecialSymbolEffect(esd.VfxPrefab, () =>
+                {
+                    esd.OnShowdown(sr, false);
+                    onOneApplied();
+                });
+            }
+        }
+        else
+        {
+            ResolveAfterSpecials(sr);
+        }
+    }
+
+    // 특수카드 효과가 전부 적용된 뒤: 승패 판정 → (리버스 교환 연출 or 승자 연출) 진행.
+    void ResolveAfterSpecials(ShowdownResult sr)
+    {
         int cmp;
         if (sr.ForceDraw) cmp = 0;
         else if (sr.ForceOutcome) cmp = sr.ForcedCmp;
         else cmp = CompareCards(sr.PlayerNumber, sr.EnemyNumber);
 
-        // 1) 카드는 이미 승부처(승부 슬롯)로 이동해 있음(OnPlayerCommit의 CommitCard에서 처리).
-        // 2) 리버스 교환이면 그 이동 자체가 전용 연출 → 끝나면 3단계로.
-        //    아니면 특수카드를 낸 쪽에 전용 발동 연출(통통 펀치) 재생 → 끝나면 3단계로.
         if (sr.SwapCards)
         {
             AnimateSwap();
             Tw.Delay(swapMoveDuration, () => PlayWinnerEffect(cmp, sr));
-        }
-        else if (playerSpecialNow || enemySpecialNow)
-        {
-            int pending = (playerSpecialNow ? 1 : 0) + (enemySpecialNow ? 1 : 0);
-            System.Action onOneDone = () =>
-            {
-                pending--;
-                if (pending > 0) return;
-                PlayWinnerEffect(cmp, sr);
-            };
-            if (playerSpecialNow) _playerChosen.PlaySpecialEffect(onOneDone);
-            if (enemySpecialNow) _enemyChosen.PlaySpecialEffect(onOneDone);
         }
         else
         {
