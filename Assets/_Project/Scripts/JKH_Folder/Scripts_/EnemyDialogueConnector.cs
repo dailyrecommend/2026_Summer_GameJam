@@ -74,6 +74,20 @@ public class EnemyDialogueConnector : MonoBehaviour
         }
     }
 
+    /// <summary>대화창 초기화. 텍스트를 비우고 박스 크기를 0으로 되돌린다(전투 종료 시 등).</summary>
+    public void ResetDialogue()
+    {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+        popTween?.Kill();
+
+        if (targetText != null) targetText.text = "";
+        if (dialogueBox != null) dialogueBox.localScale = Vector3.zero;
+    }
+
     public IEnumerator TypeTextRoutine(string fullText)
     {
         targetText.text = " ";

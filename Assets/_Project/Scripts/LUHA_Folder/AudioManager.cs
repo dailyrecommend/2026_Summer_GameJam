@@ -13,6 +13,9 @@ public class AudioManager : MonoBehaviour
         CardDraw,
         PanelSwitch,
         StageSwitch,
+        SpecialActivate,
+        CardWin,
+        RoundDraw, // 무승부(카드 드로우의 CardDraw와 구분)
     }
 
     public enum Bgm { } // bgm 목록 추가하기

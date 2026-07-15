@@ -34,16 +34,36 @@ public class FieldCard : MonoBehaviour
     [SerializeField] float tiltMaxAngle = 12f;
     [SerializeField] float tiltSmooth = 14f;
 
+    [Header("승부 연출 - 특수카드 발동 (3축 회전 펀치)")]
+    [Tooltip("특수카드 발동 시 흔들리는 회전 각도(오일러, 도). X/Y/Z를 다 채우면 3차원적으로 통통 튐")]
+    [SerializeField] Vector3 specialPunchRotation = new Vector3(12f, 15f, 18f);
+    [SerializeField] float specialPunchDuration = 0.3f;
+    [SerializeField] int specialPunchVibrato = 10;
+
+    [Header("승부 연출 - 승리 카드 (들어올림 + 3축 회전 펀치)")]
+    [SerializeField] float winLiftHeight = 0.15f;
+    [SerializeField] float winLiftDuration = 0.2f;
+    [SerializeField] Vector3 winPunchRotation = new Vector3(18f, 22f, 25f);
+    [SerializeField] float winPunchDuration = 0.35f;
+    [SerializeField] int winPunchVibrato = 14;
+
+    [Header("승부 연출 - 무승부 카드 (들어올림 + 약한 3축 회전 펀치)")]
+    [SerializeField] Vector3 drawPunchRotation = new Vector3(6f, 8f, 10f);
+    [SerializeField] float drawPunchDuration = 0.3f;
+    [SerializeField] int drawPunchVibrato = 10;
+
     CardData _data;
     MaterialPropertyBlock _mpb;
     Tween _moveTween;
     Tween _scaleTween;
     Tween _flipTween;
+    Tween _punchRotTween;
 
     Vector3 _homePos;
     Vector3 _baseScale = Vector3.one;
     Quaternion _baseRot;
     float _flipAngle; // 0=앞면, 180=뒷면
+    Vector3 _punchRot; // 승부 연출용 회전 펀치 오프셋(오일러, 감쇠하며 0으로 수렴)
     bool _raised;
     bool _hovered;
 
@@ -74,10 +94,11 @@ public class FieldCard : MonoBehaviour
         float t = 1f - Mathf.Exp(-tiltSmooth * Time.deltaTime);
         _tilt = Vector2.Lerp(_tilt, _tiltTarget, t);
 
-        // 기준회전 × 호버기울기 × 플립 을 매 프레임 합성.
+        // 기준회전 × 호버기울기 × 플립 × 승부 펀치(회전) 를 매 프레임 합성.
         transform.localRotation = _baseRot
             * Quaternion.Euler(_tilt.x, _tilt.y, 0f)
-            * Quaternion.AngleAxis(_flipAngle, flipAxis);
+            * Quaternion.AngleAxis(_flipAngle, flipAxis)
+            * Quaternion.Euler(_punchRot);
     }
 
     /// <summary>커서가 카드에 닿은 월드 지점 → 중심 거리로 기울기 목표 설정.</summary>
@@ -183,5 +204,73 @@ public class FieldCard : MonoBehaviour
         Vector3 target = _baseScale * (_hovered ? hoverScale : 1f);
         _scaleTween?.Kill();
         _scaleTween = transform.DOScale(target, duration).SetEase(ease);
+    }
+
+    /// <summary>
+    /// 회전 펀치: 지정 오일러각만큼 확 꺾였다가 감쇠 진동하며 원래 회전으로 복귀.
+    /// X/Y/Z 축이 서로 다른 위상·주파수로 흔들려서(DOShakeScale과 같은 방식) 대각선으로만
+    /// 딱딱하게 움직이지 않고 진짜 3차원적으로 통통 구르는 느낌이 난다.
+    /// 스케일이 아니라 회전을 흔든다 — LateUpdate 합성식의 _punchRot 항으로 반영되므로
+    /// 기울기/플립 회전과 안 부딪힌다.
+    /// </summary>
+    void PlayRotationPunch(Vector3 punchEuler, float duration, int vibrato, System.Action onDone)
+    {
+        _punchRotTween?.Kill();
+        float seed = Random.value * 100f;
+
+        _punchRotTween = Tw.To(() => 0f, val =>
+        {
+            float damper = 1f - val;
+            float ang = val * vibrato * Mathf.PI;
+            // 축마다 다른 주파수 배율 + 위상(seed)을 줘서 서로 어긋나게 진동시킴.
+            float oscX = Mathf.Sin(ang + seed);
+            float oscY = Mathf.Sin(ang * 1.3f + seed * 1.7f);
+            float oscZ = Mathf.Sin(ang * 0.8f + seed * 2.3f);
+            _punchRot = new Vector3(
+                punchEuler.x * oscX,
+                punchEuler.y * oscY,
+                punchEuler.z * oscZ) * damper;
+        }, 1f, duration).SetEase(Ease.Linear);
+        _punchRotTween.OnComplete(() =>
+        {
+            _punchRot = Vector3.zero;
+            onDone?.Invoke();
+        });
+    }
+
+    // 승부 슬롯에서 살짝 들어올림. 완료 시 onDone 호출.
+    void PlayLift(System.Action onDone)
+    {
+        Vector3 lifted = _homePos + new Vector3(0f, winLiftHeight, 0f);
+        _moveTween?.Kill();
+        _moveTween = transform.DOLocalMove(lifted, winLiftDuration).SetEase(Ease.OutQuad);
+        _moveTween.OnComplete(() => onDone?.Invoke());
+    }
+
+    /// <summary>특수카드 발동 연출: 제자리에서 회전 펀치. 완료 시 onDone 호출.</summary>
+    public void PlaySpecialEffect(System.Action onDone = null)
+    {
+        if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.SpecialActivate);
+        PlayRotationPunch(specialPunchRotation, specialPunchDuration, specialPunchVibrato, onDone);
+    }
+
+    /// <summary>승리 카드 연출: 살짝 들어올려진 뒤 회전 펀치(발라트로 느낌). 완료 시 onDone 호출.</summary>
+    public void PlayWinEffect(System.Action onDone = null)
+    {
+        PlayLift(() =>
+        {
+            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardWin);
+            PlayRotationPunch(winPunchRotation, winPunchDuration, winPunchVibrato, onDone);
+        });
+    }
+
+    /// <summary>무승부 카드 연출: 살짝 들어올려진 뒤 약한 회전 펀치. 완료 시 onDone 호출.</summary>
+    public void PlayDrawEffect(System.Action onDone = null)
+    {
+        PlayLift(() =>
+        {
+            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.RoundDraw);
+            PlayRotationPunch(drawPunchRotation, drawPunchDuration, drawPunchVibrato, onDone);
+        });
     }
 }

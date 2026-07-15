@@ -167,7 +167,7 @@ public class BattleManager : MonoBehaviour
         UpdateScoreUI();
         SetMessage("");
 
-        EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnGameStart);
+        // OnGameStart 대사는 Player/Enemy 무버가 전투 위치로 다 이동한 뒤에 재생한다(MoveActorsInThenStartRound에서 호출).
 
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
@@ -242,6 +242,11 @@ public class BattleManager : MonoBehaviour
     {
         SetActorsActive(true); // 전투 시작 → 이제부터 보임
         float actorDelay = MoveActorsToAnchors();
+
+        // Player/Enemy가 전투 위치로 다 이동한 뒤에 첫 대사 재생.
+        Tw.Delay(actorDelay, () =>
+            EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(EnemyDialogueTrigger.OnGameStart));
+
         Tw.Delay(actorDelay + postActorMoveDelay, StartRound);
     }
 
@@ -432,15 +437,64 @@ public class BattleManager : MonoBehaviour
         if (_playerChosen != null && _playerChosen.Data is SpecialCardData ps) ps.OnShowdown(sr, true);
         if (_enemyChosen != null && _enemyChosen.Data is SpecialCardData es) es.OnShowdown(sr, false);
 
-        // 리버스 교환: 두 카드가 서로 상대 자리로 이동 → 멈춘 뒤 판정.
+        // 승리 판정은 여기서 미리 계산(연출 단계에서 승자를 알아야 하므로).
+        int cmp;
+        if (sr.ForceDraw) cmp = 0;
+        else if (sr.ForceOutcome) cmp = sr.ForcedCmp;
+        else cmp = CompareCards(sr.PlayerNumber, sr.EnemyNumber);
+
+        // 1) 카드는 이미 승부처(승부 슬롯)로 이동해 있음(OnPlayerCommit의 CommitCard에서 처리).
+        // 2) 리버스 교환이면 그 이동 자체가 전용 연출 → 끝나면 3단계로.
+        //    아니면 특수카드를 낸 쪽에 전용 발동 연출(통통 펀치) 재생 → 끝나면 3단계로.
         if (sr.SwapCards)
         {
             AnimateSwap();
-            Tw.Delay(swapMoveDuration, () => Finalize(sr));
+            Tw.Delay(swapMoveDuration, () => PlayWinnerEffect(cmp, sr));
+        }
+        else if (playerSpecialNow || enemySpecialNow)
+        {
+            int pending = (playerSpecialNow ? 1 : 0) + (enemySpecialNow ? 1 : 0);
+            System.Action onOneDone = () =>
+            {
+                pending--;
+                if (pending > 0) return;
+                PlayWinnerEffect(cmp, sr);
+            };
+            if (playerSpecialNow) _playerChosen.PlaySpecialEffect(onOneDone);
+            if (enemySpecialNow) _enemyChosen.PlaySpecialEffect(onOneDone);
         }
         else
         {
-            Finalize(sr);
+            PlayWinnerEffect(cmp, sr);
+        }
+    }
+
+    // 3) 승부 결과 연출 → 끝나면 최종 정리(점수/버림/다음 라운드).
+    //    승패면 이긴 카드만 들어올림+펀치. 무승부면 양쪽 다 들어올림+약한 펀치.
+    void PlayWinnerEffect(int cmp, ShowdownResult sr)
+    {
+        if (cmp > 0 && _playerChosen != null)
+        {
+            _playerChosen.PlayWinEffect(() => Finalize(cmp, sr));
+        }
+        else if (cmp < 0 && _enemyChosen != null)
+        {
+            _enemyChosen.PlayWinEffect(() => Finalize(cmp, sr));
+        }
+        else if (cmp == 0 && (_playerChosen != null || _enemyChosen != null))
+        {
+            int pending = (_playerChosen != null ? 1 : 0) + (_enemyChosen != null ? 1 : 0);
+            System.Action onOneDone = () =>
+            {
+                pending--;
+                if (pending <= 0) Finalize(cmp, sr);
+            };
+            _playerChosen?.PlayDrawEffect(onOneDone);
+            _enemyChosen?.PlayDrawEffect(onOneDone);
+        }
+        else
+        {
+            Finalize(cmp, sr);
         }
     }
 
@@ -460,15 +514,11 @@ public class BattleManager : MonoBehaviour
         card.PlaceAt(local, swapMoveDuration, swapMoveEase);
     }
 
-    // 판정 + 점수 + 버림 + 다음 라운드.
-    void Finalize(ShowdownResult sr)
+    // 최종 정리: 점수 + 버림 + 다음 라운드. cmp(승패)는 Resolve에서 이미 계산해 넘겨받는다.
+    void Finalize(int cmp, ShowdownResult sr)
     {
         if (_gameOver) return;
 
-        int cmp;
-        if (sr.ForceDraw) cmp = 0;
-        else if (sr.ForceOutcome) cmp = sr.ForcedCmp;
-        else cmp = CompareCards(sr.PlayerNumber, sr.EnemyNumber);
         string result;
         if (cmp > 0)
         {
@@ -537,6 +587,16 @@ public class BattleManager : MonoBehaviour
         // → 둘 다 끝나면 스테이지로 복귀 → 이동이 멈추면 보상 지급.
         Tw.Delay(endReturnDelay, () =>
         {
+            // 승/패 대사를 잠깐 보여준 뒤 → 대화창 초기화(텍스트 비우고 박스 크기 0으로).
+            EnemyDialogueConnector.Instance?.ResetDialogue();
+
+            // 점수도 0으로 초기화(펀치 연출 없이 조용히).
+            _playerScore = 0;
+            _enemyScore = 0;
+            _lastPlayerScoreUI = 0;
+            _lastEnemyScoreUI = 0;
+            UpdateScoreUI();
+
             float actorDelay = MoveActorsHome();
             float boardDelay = ReturnBoardToSpawner();
             float wait = Mathf.Max(actorDelay, boardDelay);

@@ -122,6 +122,17 @@ MonoBehaviour:
   flipEase: 5
   tiltMaxAngle: 17.5
   tiltSmooth: 14
+  specialPunchRotation: {x: 12, y: 15, z: 18}
+  specialPunchDuration: 0.3
+  specialPunchVibrato: 8
+  winLiftHeight: 0.2
+  winLiftDuration: 0.2
+  winPunchRotation: {x: 18, y: 22, z: 25}
+  winPunchDuration: 0.3
+  winPunchVibrato: 8
+  drawPunchRotation: {x: 6, y: 8, z: 10}
+  drawPunchDuration: 0.5
+  drawPunchVibrato: 8
 --- !u!65 &339026405510401234
 BoxCollider:
   m_ObjectHideFlags: 0
