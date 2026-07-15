@@ -6,7 +6,7 @@ public enum SpecialEffect
 {
     None,
     ForceDraw,     // 플레잉 조커: 결과를 무승부로
-    RandomNumber,  // 다빈치 조커: 승부 시 숫자가 0~13 랜덤으로 정해짐
+    RandomNumber,  // 다빈치 조커: 승부 시 숫자가 0~11 랜덤으로 정해짐
     DrawTwo,       // 드로우 2: 상대가 전 턴에 특수카드를 냈으면 무승부+다음 라운드 2배, 아니면 숫자 2
     Reverse,       // 리버스: 2로 간주. 상대 숫자카드면 교환, 상대 특수면 교환 없이 패배
     Bang,          // Bang!: 상대 필드에 남은 고유카드 하나를 무작위로 파괴하고 승리. 없으면 숫자 4로 간주
@@ -32,7 +32,7 @@ public static class SpecialCardEffects
 
             case SpecialEffect.RandomNumber:
             {
-                int roll = Random.Range(0, 14); // 0~13
+                int roll = Random.Range(0, 12); // 0~11
                 if (isPlayer) result.PlayerNumber = roll;
                 else result.EnemyNumber = roll;
                 Debug.Log($"[특수] 다빈치 조커({(isPlayer ? "플레이어" : "적")}) → 숫자 {roll}");

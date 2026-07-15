@@ -80,10 +80,15 @@ public class BattleManager : MonoBehaviour
     [SerializeField] TMP_Text playerScoreText;
     [SerializeField] TMP_Text enemyScoreText;
     [SerializeField] TMP_Text messageText;
+    [Tooltip("점수가 바뀔 때 텍스트가 커졌다 돌아오는 정도")]
+    [SerializeField] float scorePunchStrength = 0.35f;
+    [SerializeField] float scorePunchDuration = 0.25f;
 
     [Header("점수판 (선택)")]
     [SerializeField] ScoreBoard playerScoreBoard;
     [SerializeField] ScoreBoard enemyScoreBoard;
+
+    int _lastPlayerScoreUI, _lastEnemyScoreUI;
 
     readonly CardPile _playerPile = new CardPile();
     readonly CardPile _enemyPile = new CardPile();
@@ -141,6 +146,8 @@ public class BattleManager : MonoBehaviour
         _gameOver = false;
         _playerScore = 0;
         _enemyScore = 0;
+        _lastPlayerScoreUI = 0; // 리셋 시엔 펀치 연출 안 나가게 캐시도 같이 초기화
+        _lastEnemyScoreUI = 0;
         _playerSpecialLast = false;
         _enemySpecialLast = false;
         _playerDoubleNext = false;
@@ -556,10 +563,28 @@ public class BattleManager : MonoBehaviour
 
     void UpdateScoreUI()
     {
-        if (playerScoreText != null) playerScoreText.text = _playerScore.ToString();
-        if (enemyScoreText != null) enemyScoreText.text = _enemyScore.ToString();
+        if (playerScoreText != null)
+        {
+            playerScoreText.text = _playerScore.ToString("00"); // 항상 두 자리(00, 01, 02...)
+            if (_playerScore != _lastPlayerScoreUI) PunchScoreText(playerScoreText);
+        }
+        if (enemyScoreText != null)
+        {
+            enemyScoreText.text = _enemyScore.ToString("00");
+            if (_enemyScore != _lastEnemyScoreUI) PunchScoreText(enemyScoreText);
+        }
+        _lastPlayerScoreUI = _playerScore;
+        _lastEnemyScoreUI = _enemyScore;
+
         if (playerScoreBoard != null) playerScoreBoard.SetScore(_playerScore);
         if (enemyScoreBoard != null) enemyScoreBoard.SetScore(_enemyScore);
+    }
+
+    // 점수 텍스트가 살짝 커졌다 돌아오는 펀치 연출. 겹쳐 호출돼도 어긋나지 않게 스케일을 먼저 리셋.
+    void PunchScoreText(TMP_Text text)
+    {
+        text.transform.localScale = Vector3.one;
+        text.transform.DOPunchScale(Vector3.one * scorePunchStrength, scorePunchDuration);
     }
 
     void SetMessage(string msg)
