@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: PlayerIdleLog
   m_EditorClassIdentifier: Assembly-CSharp::Conversation
   triggerType: 2
-  dialogueText: "\uC774\uBD10 \uC880 \uC6C0\uC9C1\uC5EC\uBD10."
+  dialogueText: "\uC120\uD0DD \uC548 \uD560\uAC74\uAC00?"

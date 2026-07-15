@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55b17abfcf47c0b45a6e987af1b196f9, type: 3}
-  m_Name: RoundStartLog
+  m_Name: PDefeatGameLog
   m_EditorClassIdentifier: Assembly-CSharp::Conversation
-  triggerType: 1
-  dialogueText: "\uBB34\uC5C7\uC744 \uC120\uD0DD\uD560\uAE4C?"
+  triggerType: 5
+  dialogueText: "\uD558\uD558\uD558 \uACE0\uC791?"
