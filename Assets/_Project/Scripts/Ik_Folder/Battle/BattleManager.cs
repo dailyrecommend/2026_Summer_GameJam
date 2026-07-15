@@ -46,11 +46,15 @@ public class BattleManager : MonoBehaviour
     [Header("오디오")]
     [Tooltip("스테이지에 브금이 지정 안 됐을 때 재생할 기본 전투 브금")]
     [SerializeField] AudioClip defaultBattleBgm;
+    [Tooltip("마지막 스테이지 클리어 시 재생할 엔딩 브금")]
+    [SerializeField] AudioClip endingBgm;
 
     [Header("클리어/복귀/보상")]
     [SerializeField] StageProgress progress;
     [Tooltip("전투 종료 후 돌아갈 스테이지 화면 인덱스")]
     [SerializeField] int stageScreenIndex = 1;
+    [Tooltip("마지막 스테이지 클리어 시 전환할 엔딩 화면 인덱스(ScreenFlowController의 Screens 배열에 추가 필요)")]
+    [SerializeField] int endingScreenIndex = 3;
     [Tooltip("결과 표시 후 스테이지로 복귀하기까지 대기(초)")]
     [SerializeField] float endReturnDelay = 1.5f;
 
@@ -103,6 +107,7 @@ public class BattleManager : MonoBehaviour
     GameObject _boardGameInstance;              // 현재 스테이지 보드게임 생성물
     StageData _activeStage; // 현재 스테이지(적 덱/보상 소스)
     int _activeStageIndex = -1;
+    int _totalStageCount = -1; // 마지막 스테이지인지 판별용(StageBattleLauncher가 전체 스테이지 수를 넘겨줌)
 
     [Header("패시브: 뱅(플레이어 무선택 시 강제 승부)")]
     [Tooltip("플레이어가 이 시간 동안 승부하지 않으면 무작위 카드로 강제 승부")]
@@ -114,10 +119,14 @@ public class BattleManager : MonoBehaviour
     /// <summary>스테이지를 지정해 전투 시작. (적 덱/보상을 이 스테이지에서 가져옴)</summary>
     public void StartBattle(StageData stage) => StartBattle(stage, -1);
 
-    public void StartBattle(StageData stage, int stageIndex)
+    public void StartBattle(StageData stage, int stageIndex) => StartBattle(stage, stageIndex, -1);
+
+    /// <summary>totalStages를 넘기면 stageIndex가 마지막 스테이지인지 판별해 클리어 시 엔딩으로 전환한다.</summary>
+    public void StartBattle(StageData stage, int stageIndex, int totalStages)
     {
         _activeStage = stage;
         _activeStageIndex = stageIndex;
+        _totalStageCount = totalStages;
         StartBattle();
     }
 
@@ -167,7 +176,9 @@ public class BattleManager : MonoBehaviour
         UpdateScoreUI();
         SetMessage("");
 
+        // 대화창은 OnGameStart가 트리거되기 전까지 아무것도 보이면 안 됨(이전 전투의 잔여 텍스트 등 방지).
         // OnGameStart 대사는 Player/Enemy 무버가 전투 위치로 다 이동한 뒤에 재생한다(MoveActorsInThenStartRound에서 호출).
+        EnemyDialogueConnector.Instance?.ResetDialogue();
 
         // 전투 중에는 화면 이동 잠금(게임 종료 시 해제).
         if (screenFlow != null) screenFlow.SetNavigationLocked(true);
@@ -562,26 +573,34 @@ public class BattleManager : MonoBehaviour
 
     // 3) 승부 결과 연출 → 끝나면 최종 정리(점수/버림/다음 라운드).
     //    승패면 이긴 카드만 들어올림+펀치. 무승부면 양쪽 다 들어올림+약한 펀치.
+    //    cmp는 sr.PlayerNumber/EnemyNumber(=승부 슬롯 '자리' 기준) 비교 결과이므로, 리버스로
+    //    교환된 경우 실제 카드 오브젝트는 자리가 서로 바뀌어 있다 — _playerChosen/_enemyChosen을
+    //    그대로 쓰면 안 되고, 지금 어느 자리에 있는 카드가 그 자리 값을 대표하는지로 매칭해야 한다.
     void PlayWinnerEffect(int cmp, ShowdownResult sr)
     {
-        if (cmp > 0 && _playerChosen != null)
+        FieldCard playerSlotCard = sr.SwapCards ? _enemyChosen : _playerChosen;
+        FieldCard enemySlotCard = sr.SwapCards ? _playerChosen : _enemyChosen;
+
+        if (cmp > 0 && playerSlotCard != null)
         {
-            _playerChosen.PlayWinEffect(() => Finalize(cmp, sr));
+            // 플레이어 기준 승리 사운드(어느 물리 카드가 애니메이션을 하든 '내가 이겼다'는 사운드).
+            playerSlotCard.PlayWinEffect(AudioManager.Sfx.PlayerRoundWin, () => Finalize(cmp, sr));
         }
-        else if (cmp < 0 && _enemyChosen != null)
+        else if (cmp < 0 && enemySlotCard != null)
         {
-            _enemyChosen.PlayWinEffect(() => Finalize(cmp, sr));
+            // 플레이어 기준 패배 사운드.
+            enemySlotCard.PlayWinEffect(AudioManager.Sfx.PlayerRoundLose, () => Finalize(cmp, sr));
         }
-        else if (cmp == 0 && (_playerChosen != null || _enemyChosen != null))
+        else if (cmp == 0 && (playerSlotCard != null || enemySlotCard != null))
         {
-            int pending = (_playerChosen != null ? 1 : 0) + (_enemyChosen != null ? 1 : 0);
+            int pending = (playerSlotCard != null ? 1 : 0) + (enemySlotCard != null ? 1 : 0);
             System.Action onOneDone = () =>
             {
                 pending--;
                 if (pending <= 0) Finalize(cmp, sr);
             };
-            _playerChosen?.PlayDrawEffect(onOneDone);
-            _enemyChosen?.PlayDrawEffect(onOneDone);
+            playerSlotCard?.PlayDrawEffect(onOneDone);
+            enemySlotCard?.PlayDrawEffect(onOneDone);
         }
         else
         {
@@ -667,6 +686,10 @@ public class BattleManager : MonoBehaviour
         SetMessage(playerWon ? "게임 승리!" : "게임 패배...");
         if (playerInteractor != null) playerInteractor.SetLocked(true);
 
+        // 라운드 단위 승/패 사운드(PlayerRoundWin/Lose)와는 별개로, 스테이지(게임) 전체의 승/패 사운드.
+        if (AudioManager.instance != null)
+            AudioManager.instance.PlaySfx(playerWon ? AudioManager.Sfx.StageWin : AudioManager.Sfx.StageLose);
+
         EnemyDialogueConnector.Instance?.TriggerDialogueByCondition(
             playerWon ? EnemyDialogueTrigger.OnPlayerWininGame : EnemyDialogueTrigger.OnPlayerFailinGame);
 
@@ -674,8 +697,12 @@ public class BattleManager : MonoBehaviour
         bool firstClear = playerWon && progress != null && _activeStageIndex >= 0
                           && progress.MarkCleared(_activeStageIndex);
 
+        // 마지막 스테이지를 클리어했으면 스테이지 화면이 아니라 엔딩으로 — 플레이어 조작과 무관하게 강제 전환.
+        bool isFinalStageClear = playerWon && _activeStageIndex >= 0 && _totalStageCount > 0
+                                 && _activeStageIndex == _totalStageCount - 1;
+
         // 결과를 잠깐 보여준 뒤 → Player/Enemy는 초기 위치로, 보드는 홀더→스포너로 복귀
-        // → 둘 다 끝나면 스테이지로 복귀 → 이동이 멈추면 보상 지급.
+        // → 둘 다 끝나면 스테이지(또는 엔딩)로 복귀 → 이동이 멈추면 보상 지급.
         Tw.Delay(endReturnDelay, () =>
         {
             // 승/패 대사를 잠깐 보여준 뒤 → 대화창 초기화(텍스트 비우고 박스 크기 0으로).
@@ -695,6 +722,30 @@ public class BattleManager : MonoBehaviour
             System.Action goToStage = () =>
             {
                 SetActorsActive(false); // 초기 위치 복귀 완료 → 다시 숨김
+
+                if (isFinalStageClear)
+                {
+                    // 엔딩: 효과음 + 브금 재생하고, 화면은 잠금 유지(플레이어가 못 벗어나게).
+                    if (AudioManager.instance != null)
+                    {
+                        AudioManager.instance.PlaySfx(AudioManager.Sfx.EndingClear);
+                    }
+                    if (screenFlow != null)
+                    {
+                        screenFlow.GoTo(endingScreenIndex, () =>
+                        {
+                            if (AudioManager.instance != null) AudioManager.instance.PlayBgm(endingBgm);
+                            if (firstClear) GrantReward();
+                            // SetNavigationLocked(false)를 호출하지 않음 → 엔딩 화면에서 조작 불가 상태 유지.
+                        });
+                    }
+                    else if (firstClear)
+                    {
+                        GrantReward();
+                    }
+                    return;
+                }
+
                 if (screenFlow != null)
                 {
                     screenFlow.GoTo(stageScreenIndex, () =>

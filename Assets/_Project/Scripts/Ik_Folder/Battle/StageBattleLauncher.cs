@@ -35,6 +35,6 @@ public class StageBattleLauncher : MonoBehaviour
         if (stage == null)
             Debug.LogWarning($"[StageBattleLauncher] 인덱스 {i}에 해당하는 StageData가 없습니다.");
 
-        battleManager.StartBattle(stage, i);
+        battleManager.StartBattle(stage, i, stages != null ? stages.Length : -1);
     }
 }

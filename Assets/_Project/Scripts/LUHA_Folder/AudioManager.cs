@@ -14,8 +14,12 @@ public class AudioManager : MonoBehaviour
         PanelSwitch,
         StageSwitch,
         SpecialActivate,
-        CardWin,
+        PlayerRoundWin, // 승부에서 플레이어가 이겼을 때(이름만 바뀜, 기존 CardWin과 같은 인덱스 — 기존 인스펙터 클립 유지됨)
         RoundDraw, // 무승부(카드 드로우의 CardDraw와 구분)
+        EndingClear, // 마지막 스테이지 클리어 → 엔딩 진입
+        PlayerRoundLose, // 승부에서 플레이어가 졌을 때
+        StageWin,        // 스테이지(게임) 승리
+        StageLose,       // 스테이지(게임) 패배
     }
 
     public enum Bgm { } // bgm 목록 추가하기

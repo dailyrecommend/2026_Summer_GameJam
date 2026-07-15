@@ -316,12 +316,16 @@ public class FieldCard : MonoBehaviour
         });
     }
 
-    /// <summary>승리 카드 연출: 살짝 들어올려진 뒤 회전 펀치(발라트로 느낌). 완료 시 onDone 호출.</summary>
-    public void PlayWinEffect(System.Action onDone = null)
+    /// <summary>
+    /// 승리 카드 연출: 살짝 들어올려진 뒤 회전 펀치(발라트로 느낌). 완료 시 onDone 호출.
+    /// sfx는 플레이어 기준 승/패 사운드(PlayerRoundWin/PlayerRoundLose)를 호출부(BattleManager)가 결정해 넘긴다
+    /// — 이 카드가 물리적으로 어느 쪽 자리에 있는지가 아니라 '누가 이겼는지' 기준이라서.
+    /// </summary>
+    public void PlayWinEffect(AudioManager.Sfx sfx, System.Action onDone = null)
     {
         PlayLift(() =>
         {
-            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(AudioManager.Sfx.CardWin);
+            if (AudioManager.instance != null) AudioManager.instance.PlaySfx(sfx);
             PlayRotationPunch(winPunchRotation, winPunchDuration, winPunchVibrato, onDone);
         });
     }

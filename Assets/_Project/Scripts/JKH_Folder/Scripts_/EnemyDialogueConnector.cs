@@ -24,8 +24,14 @@ public class EnemyDialogueConnector : MonoBehaviour
     [SerializeField] private float popDuration = 0.2f;
     [SerializeField] private Ease popEase = Ease.OutBack;
 
+    [Header("[유지 - 타이핑 완료 후]")]
+    [Tooltip("대사를 다 친 뒤, 이 시간 동안은 새 대사가 와도 끼어들지 않고 유지한다. 새 대사가 없으면 계속 유지됨")]
+    [SerializeField] private float holdDuration = 1f;
+
     private Coroutine typingCoroutine;
     private Tween popTween;
+    private Tween pendingSwitchTween; // 유지 시간이 끝난 뒤로 미뤄둔 '다음 대사 전환' 예약(재요청 시 취소 대상)
+    private float _holdUntil = -1f; // 이 시각까지는 현재 대사를 끊지 않음(Time.time 기준)
 
     private void Awake()
     {
@@ -33,6 +39,9 @@ public class EnemyDialogueConnector : MonoBehaviour
         {
             Instance = this;
             if (dialogueBox == null && targetText != null) dialogueBox = targetText.transform.parent;
+            // 아무 트리거도 없었던 최초 상태에서는 아무것도 보이면 안 됨.
+            if (targetText != null) targetText.text = "";
+            if (dialogueBox != null) dialogueBox.localScale = Vector3.zero;
         }
         else
         {
@@ -45,32 +54,47 @@ public class EnemyDialogueConnector : MonoBehaviour
         if (targetText == null) return;
 
         Conversation matchedDialogue = dialogueList.Find(so => so != null && so.triggerType == trigger);
-
-        if (matchedDialogue != null)
+        if (matchedDialogue == null)
         {
-            if (typingCoroutine != null)
-            {
-                StopCoroutine(typingCoroutine);
-                typingCoroutine = null;
-            }
-            popTween?.Kill();
+            Debug.LogWarning("������ ����Ʈ�� ��� �� ��");
+            return;
+        }
 
-            if (dialogueBox != null)
-            {
-                // 박스가 0→1로 빠르게 커진 뒤에 타이핑 시작.
-                dialogueBox.localScale = Vector3.zero;
-                popTween = dialogueBox.DOScale(1f, popDuration)
-                    .SetEase(popEase)
-                    .OnComplete(() => typingCoroutine = StartCoroutine(TypeTextRoutine(matchedDialogue.dialogueText)));
-            }
-            else
-            {
-                typingCoroutine = StartCoroutine(TypeTextRoutine(matchedDialogue.dialogueText));
-            }
+        pendingSwitchTween?.Kill();
+
+        // 아직 타이핑 중이면 바로 끊고 새 대사로. 다 친 상태에서 유지 시간이 안 지났으면
+        // 유지 시간이 끝난 뒤에 전환되도록 예약(그동안은 지금 대사 그대로 보여줌).
+        float remainingHold = _holdUntil - Time.time;
+        if (typingCoroutine == null && remainingHold > 0f)
+        {
+            pendingSwitchTween = Tw.Delay(remainingHold, () => StartDialogue(matchedDialogue));
         }
         else
         {
-            Debug.LogWarning("������ ����Ʈ�� ��� �� ��");
+            StartDialogue(matchedDialogue);
+        }
+    }
+
+    void StartDialogue(Conversation dialogue)
+    {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+        popTween?.Kill();
+
+        if (dialogueBox != null)
+        {
+            // 박스가 0→1로 빠르게 커진 뒤에 타이핑 시작.
+            dialogueBox.localScale = Vector3.zero;
+            popTween = dialogueBox.DOScale(1f, popDuration)
+                .SetEase(popEase)
+                .OnComplete(() => typingCoroutine = StartCoroutine(TypeTextRoutine(dialogue.dialogueText)));
+        }
+        else
+        {
+            typingCoroutine = StartCoroutine(TypeTextRoutine(dialogue.dialogueText));
         }
     }
 
@@ -83,6 +107,8 @@ public class EnemyDialogueConnector : MonoBehaviour
             typingCoroutine = null;
         }
         popTween?.Kill();
+        pendingSwitchTween?.Kill();
+        _holdUntil = -1f;
 
         if (targetText != null) targetText.text = "";
         if (dialogueBox != null) dialogueBox.localScale = Vector3.zero;
@@ -100,5 +126,6 @@ public class EnemyDialogueConnector : MonoBehaviour
         }
 
         typingCoroutine = null;
+        _holdUntil = Time.time + holdDuration;
     }
 }
