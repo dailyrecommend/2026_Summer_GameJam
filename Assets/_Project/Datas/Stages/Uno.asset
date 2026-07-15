@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Uno
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   id: Un
-  displayName: Uno
-  description: Uno
+  displayName: UNO
+  description: "\uBC84\uB9B0 \uCE74\uB4DC\uB97C \uC11E\uC5B4\uC11C \uB2E4\uC2DC \uBF51\uC744
+    \uB54C, \uAC00\uC7A5 \uCC98\uC74C \uB098\uC624\uB294 \uCE74\uB4DC\uB294 \uACE0\uC720
+    \uCE74\uB4DC\uC785\uB2C8\uB2E4."
   boardGamePrefab: {fileID: 4790333913449733941, guid: 9d77ddb939bf256498aa2d6c447b3e5b, type: 3}
   enemyDeck:
   - {fileID: 11400000, guid: 9614ef141826fcf4e8a8ada1cb559e5b, type: 2}

@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Bang
   m_EditorClassIdentifier: Assembly-CSharp::StageData
   id: Ba
-  displayName: Bang
-  description: Bang
+  displayName: Bang!
+  description: "\uD50C\uB808\uC774\uC5B4\uAC00 10\uCD08\uB3D9\uC548 \uCE74\uB4DC\uB97C
+    \uC120\uD0DD\uD558\uC9C0 \uC54A\uC73C\uBA74 \uD50C\uB808\uC774\uC5B4 \uCE74\uB4DC
+    \uC911 \uBB34\uC791\uC704\uB85C \uCE74\uB4DC \uD558\uB098\uB97C \uC120\uD0DD\uD569\uB2C8\uB2E4."
   boardGamePrefab: {fileID: 8163554083102890994, guid: 475e3e0ee887fc34ab2d8a7b2e25b6ab, type: 3}
   enemyDeck:
   - {fileID: 11400000, guid: e8dba35abe48ec8429c5d97c77a4ac33, type: 2}
