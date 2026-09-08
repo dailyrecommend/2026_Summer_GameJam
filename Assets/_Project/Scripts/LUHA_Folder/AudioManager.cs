@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using static AudioManager;
 
 public class AudioManager : MonoBehaviour
 {
@@ -28,7 +30,14 @@ public class AudioManager : MonoBehaviour
     public AudioClip[] bgmClips;
     [Range(0f, 1f)]
     public float bgmVolume = 0.5f;
-    AudioSource bgmPlayer;
+    AudioSource bgmPlayerA;
+    // <원래도 A로 변경>
+
+    public float fadeDuration = 1.0f;
+    //<my 변수>
+
+    AudioSource bgmPlayerB;
+    // <트랙을 2개로 분리하여 크로스 페이드 꾀하기>
 
     [Header("#SFX")]
     public AudioClip[] sfxClips;
@@ -44,6 +53,13 @@ public class AudioManager : MonoBehaviour
     [Tooltip("같은 클립이 동시에 겹쳐 재생될 수 있는 최대 개수(0=제한 없음)")]
     [SerializeField] int maxVoicesPerClip = 3;
     float[] _lastPlayTime; // sfxClips 인덱스별 마지막 재생 시각(unscaled)
+
+    public enum TrackMode
+    {
+        bgmA,
+        bgmB
+    }
+    //<아 어떻게 할까>
 
     void Awake()
     {
@@ -61,6 +77,9 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    public AudioSource curBgm;
+    //<더 위>
+
     void Init()
     {
         GameObject bgmObject = new GameObject("BGM Player");
@@ -69,22 +88,28 @@ public class AudioManager : MonoBehaviour
         bgmObject.transform.parent = transform;
 
         // BGM Player에 AudioSource 추가
-        bgmPlayer = bgmObject.AddComponent<AudioSource>();
+        bgmPlayerA = bgmObject.AddComponent<AudioSource>();
+        bgmPlayerB = bgmObject.AddComponent<AudioSource>();
+        // <B 도>
 
-        // 씬이 전환되더라도 자동 재생되지 않도록 설정
-        bgmPlayer.playOnAwake = false;
+        curBgm = bgmPlayerA;
+        //<curBgm 활성화 하고 대부분 curBgm으로 바꾸기>
+
+        //// 씬이 전환되더라도 자동 재생되지 않도록 설정
+        //bgmPlayer.playOnAwake = false;
+        // <해당 코드는 내 기획 상 씬이 안 넘어가는게 의도한 거라서 필요가 없음 ㅋ>
 
         // 배경음은 반복 재생
-        bgmPlayer.loop = true;
+        curBgm.loop = true;
 
         // Inspector에서 설정한 볼륨 적용
-        bgmPlayer.volume = bgmVolume;
+        curBgm.volume = bgmVolume;
 
         // 시작 클립이 있으면 재생 (없으면 스킵 — 배열 비어있어도 크래시 안 나게)
         if (bgmClips != null && bgmClips.Length > 0 && bgmClips[0] != null)
         {
-            bgmPlayer.clip = bgmClips[0];
-            bgmPlayer.Play();
+            curBgm.clip = bgmClips[0];
+            curBgm.Play();
         }
 
         GameObject sfxObject = new GameObject("SFX Player");
@@ -159,7 +184,11 @@ public class AudioManager : MonoBehaviour
     public void SetBgmVolume(float volume)
     {
         bgmVolume = volume;
-        if (bgmPlayer != null) bgmPlayer.volume = bgmVolume / 100f;
+        if (bgmPlayerA != null && bgmPlayerB != null)
+        {
+            bgmPlayerA.volume = bgmVolume / 100f;
+            bgmPlayerB.volume = bgmVolume / 100f;
+        }
     }
 
     public void SetSfxVolume(float volume)
@@ -194,5 +223,22 @@ public class AudioManager : MonoBehaviour
         bgmPlayer.Stop();
         bgmPlayer.clip = clip;
         bgmPlayer.Play();
+    }
+
+    IEnumerator BgmFade()
+    {
+        yield return null;
+
+        curBgm.volume = Mathf.Lerp(1, 0, fadeDuration);
+        if (curBgm != bgmPlayerA)  //B
+        {
+            bgmPlayerB.volume = Mathf.Lerp(0, 1, fadeDuration);
+            curBgm = bgmPlayerA;
+        }
+        else
+        {
+            bgmPlayerA.volume = Mathf.Lerp(0, 1, fadeDuration);
+            curBgm = bgmPlayerB;
+        }
     }
 }
