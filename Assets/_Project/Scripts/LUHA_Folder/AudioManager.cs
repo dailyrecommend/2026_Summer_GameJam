@@ -78,6 +78,7 @@ public class AudioManager : MonoBehaviour
     }
 
     public AudioSource curBgm;
+    AudioSource notCur = null;
     //<더 위>
 
     void Init()
@@ -203,6 +204,7 @@ public class AudioManager : MonoBehaviour
 
     public void PlayBgm(Bgm bgm)
     {
+        /*
         int index = (int)bgm;
         if (bgmClips == null || index < 0 || index >= bgmClips.Length) return;
 
@@ -212,33 +214,90 @@ public class AudioManager : MonoBehaviour
         bgmPlayer.Stop();
         bgmPlayer.clip = bgmClips[index];
         bgmPlayer.Play();
+        //<니 코드>
+        */
+
+        int index = (int)bgm;
+        if (bgmClips == null || index < 0 || index >= bgmClips.Length)
+        {
+            return;
+        }
+
+        if (curBgm.clip == bgmClips[index])
+        {
+            return;
+        }
+
+        StartCoroutine(BgmFade(bgmClips[index]));
     }
 
     // 스테이지마다 다른 브금처럼, 고정 배열 인덱스가 아니라 클립을 직접 넘겨 재생할 때 사용.
     public void PlayBgm(AudioClip clip)
     {
+        /*
         if (clip == null) return;
         if (bgmPlayer.clip == clip && bgmPlayer.isPlaying) return;
 
         bgmPlayer.Stop();
         bgmPlayer.clip = clip;
         bgmPlayer.Play();
+        //<니 코드>
+        */
+
+        if (clip == null)
+        {
+            return;
+        }
+
+        if (curBgm.clip == clip && curBgm.isPlaying)
+        {
+            return;
+        }
+
+        StartCoroutine(BgmFade(clip));
     }
 
-    IEnumerator BgmFade()
+    IEnumerator BgmFade(AudioClip nextClip)
     {
-        yield return null;
+        float timer = 0f;
 
-        curBgm.volume = Mathf.Lerp(1, 0, fadeDuration);
-        if (curBgm != bgmPlayerA)  //B
+        AudioSource temp;
+
+        notCur = (curBgm == bgmPlayerA ? bgmPlayerB : bgmPlayerA);
+
+        notCur.clip = nextClip;
+        notCur.Play();
+
+        while (timer < fadeDuration)
         {
-            bgmPlayerB.volume = Mathf.Lerp(0, 1, fadeDuration);
-            curBgm = bgmPlayerA;
+            /*
+            curBgm.volume = Mathf.Lerp(1, 0, timer / fadeDuration);
+            if (curBgm != bgmPlayerA)  //B
+            {
+                bgmPlayerB.volume = Mathf.Lerp(0, 1, timer / fadeDuration);
+                notCull = bgmPlayerB;
+            }
+            else
+            {
+                bgmPlayerA.volume = Mathf.Lerp(0, 1, timer / fadeDuration);
+                notCull = bgmPlayerA;
+            }
+            < 노력의 흔적 >
+            */
+
+            curBgm.volume = Mathf.Lerp(bgmVolume, 0, timer / fadeDuration);
+            notCur.volume = Mathf.Lerp(0, bgmVolume, timer / fadeDuration);
+
+            yield return null;
+
+            timer += Time.unscaledDeltaTime;
         }
-        else
-        {
-            bgmPlayerA.volume = Mathf.Lerp(0, 1, fadeDuration);
-            curBgm = bgmPlayerB;
-        }
+
+        curBgm.Stop();
+
+        temp = curBgm;
+        curBgm = notCur;
+        notCur = temp;
     }
+    //<ㅋㅋ 잘 된다>
 }
