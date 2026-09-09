@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>스테이지(보드게임)별 AI 성향. StageData에서 선택. 개별 로직에 해당 없으면 공통 로직으로 대체.</summary>
@@ -36,14 +37,15 @@ public static class EnemyAI
     {
         List<FieldCard> specials = FilterSpecial(hand);
         if (specials.Count > 0)
-            return SplitWeight(hand, specials, 0.65f); // 고유 카드 65%, 나머지 균등 35%
+            return SplitWeight(hand, specials, AIDataManager.Instance.data.special); // 고유 카드 65%, 나머지 균등 35%
 
         List<FieldCard> twos = FilterNumber(hand, 2);
         if (twos.Count > 0)
-            return SplitWeight(hand, twos, 0.10f); // 고유 카드 없으면 2번 카드 10%, 나머지 균등 90%
+            return SplitWeight(hand, twos, AIDataManager.Instance.data.notSpecialOnly2); // 고유 카드 없으면 2번 카드 10%, 나머지 균등 90%
 
         return null; // 해당 없음 → 공통 로직
     }
+    //<하드 코딩>
 
     // ── 우노 ────────────────────────────────────────────────
     static List<(FieldCard, float)> Uno(IReadOnlyList<FieldCard> hand, IReadOnlyList<FieldCard> opponentField, bool opponentSpecialLast)
@@ -53,31 +55,32 @@ public static class EnemyAI
         if (opponentSpecialLast && !opponentHasSpecialNow)
         {
             List<FieldCard> plusTwo = FilterEffect(hand, SpecialEffect.DrawTwo);
-            if (plusTwo.Count > 0) return SplitWeight(hand, plusTwo, 0.85f);
+            if (plusTwo.Count > 0) return SplitWeight(hand, plusTwo, AIDataManager.Instance.data.plusTwo);
         }
 
         if (!opponentHasSpecialNow)
         {
             List<FieldCard> reverse = FilterEffect(hand, SpecialEffect.Reverse);
-            if (reverse.Count > 0) return SplitWeight(hand, reverse, 0.65f);
+            if (reverse.Count > 0) return SplitWeight(hand, reverse, AIDataManager.Instance.data.notSpecialOnlyReverse);
         }
 
         return null;
     }
+    //<하드 코딩>
 
     // ── 뱅! ─────────────────────────────────────────────────
     static List<(FieldCard, float)> Bang(IReadOnlyList<FieldCard> hand, IReadOnlyList<FieldCard> opponentField)
     {
         List<FieldCard> miss = FilterEffect(hand, SpecialEffect.Miss);
-        if (miss.Count > 0) return SplitWeight(hand, miss, 0.85f);
+        if (miss.Count > 0) return SplitWeight(hand, miss, AIDataManager.Instance.data.miss);
 
         List<FieldCard> bang = FilterEffect(hand, SpecialEffect.Bang);
         List<FieldCard> beer = FilterEffect(hand, SpecialEffect.Beer);
         if (bang.Count > 0 && beer.Count > 0)
         {
             var w = new List<(FieldCard, float)>();
-            foreach (FieldCard c in bang) w.Add((c, 0.5f / bang.Count));
-            foreach (FieldCard c in beer) w.Add((c, 0.5f / beer.Count));
+            foreach (FieldCard c in bang) w.Add((c, AIDataManager.Instance.data.BAndBStandardBang / bang.Count));
+            foreach (FieldCard c in beer) w.Add((c, (1.0f-AIDataManager.Instance.data.BAndBStandardBang) / beer.Count));
             return w;
         }
 
@@ -88,6 +91,7 @@ public static class EnemyAI
         // TODO(기획): 더 추가 필요. 지금은 위 조건 다 아니면 공통 로직으로.
         return null;
     }
+    //<하드 코딩>
 
     // ── 공통 로직 (개별 로직에 해당 없을 때) ───────────────────
     static List<(FieldCard, float)> Common(IReadOnlyList<FieldCard> hand, IReadOnlyList<FieldCard> opponentField)
@@ -99,7 +103,7 @@ public static class EnemyAI
         if (!opponentHasOne)
         {
             List<FieldCard> sixes = FilterNumber(hand, 6);
-            if (sixes.Count > 0) return SplitWeight(hand, sixes, 0.75f);
+            if (sixes.Count > 0) return SplitWeight(hand, sixes, AIDataManager.Instance.data.playerNot1Enemy6);
         }
 
         // 기본: 4장 모두 균등 무작위.
@@ -107,6 +111,7 @@ public static class EnemyAI
         foreach (FieldCard c in hand) uniform.Add((c, 1f / hand.Count));
         return uniform;
     }
+    //<하드 코딩>
 
     // ── 헬퍼 ────────────────────────────────────────────────
     static bool HasSpecial(IReadOnlyList<FieldCard> field)
