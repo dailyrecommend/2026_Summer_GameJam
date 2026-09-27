@@ -36,7 +36,7 @@ public class AudioManager : MonoBehaviour
     AudioSource bgmPlayerB;
     // <트랙을 2개로 분리하여 크로스 페이드 꾀하기>
 
-    public float fadeDuration = 1.0f;
+    public float fadeDuration = 3.0f;
     //<my 변수>
 
     [Header("#SFX")]
