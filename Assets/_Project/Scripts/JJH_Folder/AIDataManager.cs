@@ -23,7 +23,7 @@ public class AIDataManager : MonoBehaviour
 {
     public static AIDataManager Instance 
     { 
-        get; 
+        get;    
         private set; 
     }
 
@@ -35,6 +35,7 @@ public class AIDataManager : MonoBehaviour
         {
             Instance = this;
             DataLoad();
+            DontDestroyOnLoad(gameObject);
         }
         else
         {

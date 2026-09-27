@@ -787,7 +787,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 250165660}
         m_TargetAssemblyTypeName: Settings, Assembly-CSharp
-        m_MethodName: UpdateText
+        m_MethodName: UpdateBgmVolume
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -809,11 +809,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0e1cc88881328b4b99f6ad215ba4b76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Settings
-  slider1: {fileID: 1716118190}
-  slider2: {fileID: 250165658}
   volume: {fileID: 1571468848}
-  progressBar: {fileID: 250165659}
-  progressText: {fileID: 1412130339}
+  sfxProgressText: {fileID: 74475564}
+  bgmProgressText: {fileID: 1412130339}
 --- !u!224 &250165661
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4932,6 +4930,7 @@ MonoBehaviour:
   bgmClips:
   - {fileID: 8300000, guid: cd3d2657281a69a418fb99973fde69b9, type: 3}
   bgmVolume: 0.5
+  fadeDuration: 1
   sfxClips:
   - {fileID: 8300000, guid: 9002c537d5b105e4a99f84ddff75d47f, type: 3}
   - {fileID: 8300000, guid: 15b7fbf6a7b5a26478f73851e0575652, type: 3}
@@ -4950,6 +4949,7 @@ MonoBehaviour:
   channels: 40
   sfxCooldown: 0.03
   maxVoicesPerClip: 3
+  curBgm: {fileID: 0}
 --- !u!4 &1571468849
 Transform:
   m_ObjectHideFlags: 0
@@ -5149,6 +5149,58 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0c3a94abd546fde41acb838970eb211b, type: 2}
   - {fileID: 11400000, guid: 0778f94f35471e848a36d683be160795, type: 2}
   - {fileID: 11400000, guid: dbfd46c08d3904743bef108006ed3f17, type: 2}
+--- !u!1 &1603198511
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1603198513}
+  - component: {fileID: 1603198512}
+  m_Layer: 0
+  m_Name: AIDataManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1603198512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1603198511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ff41dd5734f6ad459a45fa95fea28c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AIDataManager
+  data:
+    special: 0
+    notSpecialOnly2: 0
+    plusTwo: 0
+    notSpecialOnlyReverse: 0
+    miss: 0
+    BAndBStandardBang: 0
+    playerNot1Enemy6: 0
+--- !u!4 &1603198513
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1603198511}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.93199, y: -5.67588, z: -13.30302}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1645774949
 GameObject:
   m_ObjectHideFlags: 0
@@ -5567,7 +5619,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1716118193}
         m_TargetAssemblyTypeName: Settings, Assembly-CSharp
-        m_MethodName: UpdateText
+        m_MethodName: UpdateSfxVolume
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5589,11 +5641,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0e1cc88881328b4b99f6ad215ba4b76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextMove
-  slider1: {fileID: 1716118190}
-  slider2: {fileID: 250165658}
   volume: {fileID: 1571468848}
-  progressBar: {fileID: 1716118192}
-  progressText: {fileID: 74475564}
+  sfxProgressText: {fileID: 74475564}
+  bgmProgressText: {fileID: 1412130339}
 --- !u!1 &1718350235
 GameObject:
   m_ObjectHideFlags: 0
@@ -7241,3 +7291,4 @@ SceneRoots:
   - {fileID: 1571468849}
   - {fileID: 1416055306}
   - {fileID: 948619199}
+  - {fileID: 1603198513}

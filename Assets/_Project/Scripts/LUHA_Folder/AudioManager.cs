@@ -33,11 +33,11 @@ public class AudioManager : MonoBehaviour
     AudioSource bgmPlayerA;
     // <원래도 A로 변경>
 
-    public float fadeDuration = 1.0f;
-    //<my 변수>
-
     AudioSource bgmPlayerB;
     // <트랙을 2개로 분리하여 크로스 페이드 꾀하기>
+
+    public float fadeDuration = 1.0f;
+    //<my 변수>
 
     [Header("#SFX")]
     public AudioClip[] sfxClips;
@@ -81,6 +81,11 @@ public class AudioManager : MonoBehaviour
     AudioSource notCur = null;
     //<더 위>
 
+    private void Start()
+    {
+        Debug.Log("s 호출됨");
+    }
+
     void Init()
     {
         GameObject bgmObject = new GameObject("BGM Player");
@@ -101,7 +106,8 @@ public class AudioManager : MonoBehaviour
         // <해당 코드는 내 기획 상 씬이 안 넘어가는게 의도한 거라서 필요가 없음 ㅋ>
 
         // 배경음은 반복 재생
-        curBgm.loop = true;
+        bgmPlayerA.loop = true;
+        bgmPlayerB.loop = true;
 
         // Inspector에서 설정한 볼륨 적용
         curBgm.volume = bgmVolume;
@@ -184,21 +190,21 @@ public class AudioManager : MonoBehaviour
 
     public void SetBgmVolume(float volume)
     {
-        bgmVolume = volume;
+        bgmVolume = volume / 100f;
         if (bgmPlayerA != null && bgmPlayerB != null)
         {
-            bgmPlayerA.volume = bgmVolume / 100f;
-            bgmPlayerB.volume = bgmVolume / 100f;
-        }
+            bgmPlayerA.volume = bgmVolume;
+            bgmPlayerB.volume = bgmVolume;
+        }   
     }
 
     public void SetSfxVolume(float volume)
     {
-        sfxVolume = volume;
+        sfxVolume = volume / 100f;
         if (sfxPlayers == null) return;
         foreach (AudioSource player in sfxPlayers)
         {
-            player.volume = sfxVolume / 100f;
+            player.volume = sfxVolume;
         }
     }
 
@@ -214,7 +220,7 @@ public class AudioManager : MonoBehaviour
         bgmPlayer.Stop();
         bgmPlayer.clip = bgmClips[index];
         bgmPlayer.Play();
-        //<니 코드>
+        //<후배 코드>
         */
 
         int index = (int)bgm;
@@ -241,7 +247,7 @@ public class AudioManager : MonoBehaviour
         bgmPlayer.Stop();
         bgmPlayer.clip = clip;
         bgmPlayer.Play();
-        //<니 코드>
+        //<후배 코드>
         */
 
         if (clip == null)
@@ -260,31 +266,15 @@ public class AudioManager : MonoBehaviour
     IEnumerator BgmFade(AudioClip nextClip)
     {
         float timer = 0f;
-
         AudioSource temp;
 
         notCur = (curBgm == bgmPlayerA ? bgmPlayerB : bgmPlayerA);
-
         notCur.clip = nextClip;
+
         notCur.Play();
 
         while (timer < fadeDuration)
         {
-            /*
-            curBgm.volume = Mathf.Lerp(1, 0, timer / fadeDuration);
-            if (curBgm != bgmPlayerA)  //B
-            {
-                bgmPlayerB.volume = Mathf.Lerp(0, 1, timer / fadeDuration);
-                notCull = bgmPlayerB;
-            }
-            else
-            {
-                bgmPlayerA.volume = Mathf.Lerp(0, 1, timer / fadeDuration);
-                notCull = bgmPlayerA;
-            }
-            < 노력의 흔적 >
-            */
-
             curBgm.volume = Mathf.Lerp(bgmVolume, 0, timer / fadeDuration);
             notCur.volume = Mathf.Lerp(0, bgmVolume, timer / fadeDuration);
 
@@ -299,5 +289,6 @@ public class AudioManager : MonoBehaviour
         curBgm = notCur;
         notCur = temp;
     }
-    //<ㅋㅋ 잘 된다>
+
+
 }
